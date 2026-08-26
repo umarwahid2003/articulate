@@ -15,6 +15,7 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { PracticeSheet } from './components/PracticeSheet';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { isSupabaseConfigured } from './lib/supabase';
 
 const Shell = () => {
   const [isPracticeSheetOpen, setIsPracticeSheetOpen] = useState(false);
@@ -34,26 +35,40 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login', { state: { from: location }, replace: true });
-    }
-  }, [user, loading, location, navigate]);
+    if (loading) return;
 
-  React.useEffect(() => {
-    if (!loading && user && profile && !profile.terms_accepted && location.pathname !== '/terms') {
-      navigate('/terms', { replace: true });
-    } else if (!loading && user && profile && profile.terms_accepted) {
-      const hasOnboarded = localStorage.getItem('grove_user_context');
-      if (!hasOnboarded && location.pathname !== '/onboarding') {
-        navigate('/onboarding', { replace: true });
+    if (isSupabaseConfigured) {
+      if (!user) {
+        navigate('/login', { state: { from: location }, replace: true });
+        return;
       }
+      if (profile && !profile.terms_accepted && location.pathname !== '/terms') {
+        navigate('/terms', { replace: true });
+        return;
+      }
+    }
+
+    const hasOnboarded = localStorage.getItem('grove_user_context');
+    if (!hasOnboarded && location.pathname !== '/onboarding' && location.pathname !== '/login' && location.pathname !== '/signup') {
+      navigate('/onboarding', { replace: true });
     }
   }, [user, profile, loading, location, navigate]);
 
   if (loading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>
-        Loading Grove...
+      <div style={{ 
+        height: '100vh', 
+        width: '100vw', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        backgroundColor: 'var(--surface-base)', 
+        color: 'var(--grove-moss)', 
+        fontFamily: 'var(--font-display)', 
+        fontSize: '18px',
+        fontWeight: 600
+      }}>
+        Articulate...
       </div>
     );
   }

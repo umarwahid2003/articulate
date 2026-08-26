@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface Profile {
   id: string;
@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
+    if (!isSupabaseConfigured) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,12 +43,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
         
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.warn('Error fetching profile:', error);
       } else if (data) {
         setProfile(data);
       }
     } catch (err) {
-      console.error('Unexpected error fetching profile:', err);
+      console.warn('Unexpected error fetching profile:', err);
     }
   };
 
@@ -60,26 +61,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Safety timeout: ensure loading never hangs indefinitely
+    const safetyTimer = setTimeout(() => {
       if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id).finally(() => setLoading(false));
-        } else {
-          setLoading(false);
-        }
+        setLoading(false);
       }
-    });
+    }, 1500);
+
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return () => {
+        mounted = false;
+        clearTimeout(safetyTimer);
+      };
+    }
+
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (mounted) {
+          setSession(data?.session ?? null);
+          setUser(data?.session?.user ?? null);
+          if (data?.session?.user) {
+            fetchProfile(data.session.user.id).finally(() => {
+              if (mounted) setLoading(false);
+            });
+          } else {
+            setLoading(false);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Auth initialization warning:", err);
+        if (mounted) setLoading(false);
+      });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        if (newSession?.user) {
+          fetchProfile(newSession.user.id);
         } else {
           setProfile(null);
           setLoading(false);
@@ -89,12 +112,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      clearTimeout(safetyTimer);
+      authListener?.subscription?.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn("Sign out error:", err);
+      }
+    }
+    setSession(null);
+    setUser(null);
+    setProfile(null);
   };
 
   return (
