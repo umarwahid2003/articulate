@@ -1,0 +1,67 @@
+.grove-progress-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grove-progress-ring__svg {
+  transform: rotate(-90deg); /* Start at 12 o'clock */
+}
+
+.grove-progress-ring__track {
+  stroke: var(--border-hairline); /* Fallback for track */
+}
+
+@media (prefers-color-scheme: light) {
+  .grove-progress-ring__track {
+    /* Low-contrast tone between sunken and hairline */
+    stroke: rgba(227, 225, 218, 0.6); 
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .grove-progress-ring__track {
+    stroke: var(--surface-sunken);
+  }
+}
+
+.grove-progress-ring__arc {
+  stroke: var(--grove-moss);
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--duration-deliberate) var(--ease-standard),
+              stroke var(--duration-standard) var(--ease-standard);
+}
+
+.grove-progress-ring--complete .grove-progress-ring__arc {
+  /* Only place outside Mascot Celebration where gradient is permitted */
+  stroke: url(#gorget-gradient); /* Requires SVG defs, but CSS stroke gradient isn't widely supported without defs. 
+     For now, we transition to the lighter tint or a solid equivalent since SVG strokes don't accept CSS gradients easily.
+     We will use a solid representation of the gradient's start for simplicity or fallback. */
+  stroke: #4FB8AC;
+}
+
+.grove-progress-ring__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono); /* used for data numerals */
+  color: var(--ink-primary);
+}
+
+.grove-progress-ring--large .grove-progress-ring__content {
+  font-size: 28px; /* heading equivalent */
+}
+
+.grove-progress-ring--medium .grove-progress-ring__content {
+  font-size: 15px; /* data */
+}
+
+.grove-progress-ring--small .grove-progress-ring__content {
+  font-size: 10px; /* icon scale */
+}

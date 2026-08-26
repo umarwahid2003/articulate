@@ -1,0 +1,17 @@
+.grove-layout {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Desktop override: 12 columns equivalent padding */
+@media (min-width: 768px) {
+  .grove-layout {
+    padding: 0 72px;
+    max-width: 1200px;
+  }
+}

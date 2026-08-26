@@ -1,0 +1,109 @@
+.grove-bottom-nav-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 16px 24px 16px; /* Floating above the bottom edge */
+  display: flex;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none; /* Allows clicking through the empty space around the pill */
+}
+
+.grove-bottom-nav {
+  pointer-events: auto; /* Re-enable clicks on the nav itself */
+  background-color: rgba(23, 27, 25, 0.75); /* Dark theme default */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  padding: 8px;
+}
+
+@media (prefers-color-scheme: light) {
+  .grove-bottom-nav {
+    background-color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 8px 32px rgba(20, 23, 26, 0.08), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.grove-bottom-nav__container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.grove-bottom-nav__tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  color: var(--ink-tertiary);
+  transition: color var(--duration-standard) var(--ease-standard);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.grove-bottom-nav__indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--grove-moss-tint);
+  z-index: 0;
+}
+
+.grove-bottom-nav__icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.grove-bottom-nav__icon {
+  transition: transform var(--duration-quick) var(--ease-standard);
+}
+
+.grove-bottom-nav__tab:active .grove-bottom-nav__icon {
+  transform: scale(0.85);
+}
+
+.grove-bottom-nav__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--grove-moss);
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.grove-bottom-nav__tab--active {
+  color: var(--grove-moss);
+}
+
+/* Hover effects for inactive tabs */
+@media (hover: hover) {
+  .grove-bottom-nav__tab:not(.grove-bottom-nav__tab--active):hover {
+    color: var(--ink-primary);
+  }
+  
+  .grove-bottom-nav__tab:not(.grove-bottom-nav__tab--active):hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-full);
+    background-color: rgba(255, 255, 255, 0.05);
+    z-index: 0;
+  }
+  
+  @media (prefers-color-scheme: light) {
+    .grove-bottom-nav__tab:not(.grove-bottom-nav__tab--active):hover::before {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+  }
+}

@@ -1,0 +1,114 @@
+.grove-card {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 1px var(--border-hairline), var(--shadow-sm);
+  text-align: left;
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  color: inherit;
+  transition: box-shadow var(--duration-standard) var(--ease-standard),
+              background-color var(--duration-standard) var(--ease-standard);
+  position: relative;
+  overflow: hidden;
+}
+
+.grove-card--interactive {
+  cursor: pointer;
+  outline: none;
+}
+
+@media (hover: hover) {
+  .grove-card--interactive:hover {
+    box-shadow: 0 0 0 1px var(--border-hairline), var(--shadow-md);
+  }
+}
+
+.grove-card--interactive:focus-visible {
+  box-shadow: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--grove-moss);
+}
+
+/* Sizes */
+.grove-card--compact {
+  height: 72px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.grove-card--standard {
+  min-height: 96px;
+  padding: 20px;
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.grove-card--feature {
+  min-height: 160px;
+  padding: 24px;
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+/* Horizontal layout adjustment for Standard/Feature if media is present */
+.grove-card--compact {
+  flex-direction: row;
+  align-items: center;
+}
+
+.grove-card__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--spacing-16);
+  flex-shrink: 0;
+}
+
+.grove-card--standard .grove-card__media,
+.grove-card--feature .grove-card__media {
+  margin-right: 0;
+  margin-bottom: var(--spacing-16);
+}
+
+.grove-card__content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--spacing-8);
+}
+
+.grove-card__title {
+  font-size: 20px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.grove-card__subtitle {
+  font-size: 16px; /* body */
+  color: var(--ink-secondary);
+}
+
+.grove-card--compact .grove-card__title {
+  font-size: 16px; /* slightly smaller title in compact mode */
+}
+
+.grove-card--compact .grove-card__subtitle {
+  font-size: 13px; /* caption */
+}
+
+.grove-card__trailing-meta {
+  font-family: var(--font-mono);
+  font-size: 15px; /* data */
+  color: var(--ink-tertiary);
+  margin-left: var(--spacing-16);
+  flex-shrink: 0;
+}
+
+.grove-card--standard .grove-card__trailing-meta,
+.grove-card--feature .grove-card__trailing-meta {
+  margin-left: 0;
+  margin-top: var(--spacing-16);
+  align-self: flex-start;
+}

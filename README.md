@@ -1,56 +1,78 @@
-# Welcome to your Expo app 👋
+# Articulate 🎙️🌿
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Articulate** is an AI-powered conversational English fluency coach designed to build speaking confidence through zero-scroll, micro-habit daily practice sessions, instant native speech evaluation, and structured linguistic feedback.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Features
 
-   ```bash
-   npm install
-   ```
+- **Personalized Context Engine:** Calibrates speech evaluations and conversational prompts to your exact speaking goal (Job Interviews, IELTS, Casual, Presentations), current fluency level, and personal interests.
+- **Micro-Habit Daily Goals:** Set customized daily practice goals in minutes (2m, 5m, 10m, 15m) with a dynamic progress ring tracking today's progress.
+- **Precision Speech Evaluation:** Powered by Google Gemini 3.6 Flash JSON structured evaluations for fluency, grammar, vocabulary, and confidence sub-scores.
+- **Specific Linguistic Upgrades:** Highlights precise sentences spoken, alongside native-speaker alternatives and concise grammatical rationales.
+- **Session History & Review:** Complete archive of past speaking sessions with detailed interactive review sheets.
+- **Milestone Achievements:** Track your Daily Goal, Weekly Streak, and Monthly Streak.
+- **Minimalist Design & Interactive 3D Mascot:** Zero-scroll UI with smooth Three.js procedural mascot and dark-mode native styling.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🛠️ Tech Stack
 
-In the output, you'll find options to open the app in a
+- **Frontend:** React 18, TypeScript, Vite 5, Framer Motion, Lucide Icons
+- **3D Engine:** Three.js
+- **AI Backend:** Google Gemini API (`gemini-3.6-flash`)
+- **Backend / Database:** Supabase (Auth, Profiles, Progress)
+- **Mobile Runtime:** Capacitor 8 (iOS & Android ready)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🚀 Getting Started
 
-## Get a fresh project
-
-When you're ready, run:
-
+### 1. Clone the repository
 ```bash
-npm run reset-project
+git clone https://github.com/umarwahid2003/articulate.git
+cd articulate
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Install dependencies
+```bash
+npm install
+```
 
-### Other setup steps
+### 3. Configure environment variables
+Create a `.env.local` file in the root directory:
+```env
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_SUPABASE_URL=your_supabase_url_here
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### 4. Run development server
+```bash
+npm run dev
+```
 
-## Learn more
+### 5. Build for production
+```bash
+npm run build
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📱 Mobile Build (Capacitor)
 
-## Join the community
+```bash
+# Sync web build to native platforms
+npx cap sync
 
-Join our community of developers creating universal apps.
+# Open Android Studio
+npx cap open android
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Open Xcode (macOS)
+npx cap open ios
+```
+
+---
+
+## 📄 License
+MIT License

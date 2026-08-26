@@ -1,0 +1,91 @@
+.grove-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.grove-input-wrapper--disabled {
+  opacity: 0.5;
+}
+
+.grove-input__label {
+  font-size: 13px; /* caption */
+  color: var(--ink-primary);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.grove-input__container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--border-hairline);
+  transition: box-shadow var(--duration-instant) var(--ease-standard);
+}
+
+.grove-input__container:focus-within {
+  box-shadow: inset 0 0 0 2px var(--grove-moss);
+}
+
+.grove-input__container--error {
+  box-shadow: inset 0 0 0 1px var(--error-brick);
+}
+
+.grove-input__container--error:focus-within {
+  box-shadow: inset 0 0 0 2px var(--error-brick);
+}
+
+.grove-input__field {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0 16px;
+  color: var(--ink-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+
+.grove-input__field::placeholder {
+  color: var(--ink-tertiary);
+}
+
+.grove-input__field.has-leading {
+  padding-left: 40px;
+}
+
+.grove-input__field.has-trailing {
+  padding-right: 40px;
+}
+
+.grove-input__icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-secondary);
+  pointer-events: none;
+}
+
+.grove-input__icon.leading {
+  left: 12px;
+}
+
+.grove-input__icon.trailing {
+  right: 12px;
+  pointer-events: auto; /* If clear button */
+}
+
+.grove-input__message {
+  font-size: 13px; /* caption */
+  margin-top: 6px;
+  color: var(--ink-secondary);
+}
+
+.grove-input__message--error {
+  color: var(--error-brick);
+}
