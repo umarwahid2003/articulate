@@ -23,6 +23,8 @@ export const VoiceRecorder = ({
   const webRecognitionRef = useRef<any>(null);
   const transcriptionRef = useRef<string>('');
   const transcriptScrollRef = useRef<HTMLDivElement>(null);
+  const accumulatedFinalRef = useRef<string>('');
+  const currentSessionFinalRef = useRef<string>('');
 
   useEffect(() => {
     transcriptionRef.current = transcription;
@@ -37,7 +39,9 @@ export const VoiceRecorder = ({
       try {
         await CapacitorSpeech.addListener('partialResults', (data: any) => {
           if (data.matches && data.matches.length > 0) {
-            setTranscription(data.matches[0]);
+            const current = data.matches[0];
+            const fullText = (accumulatedFinalRef.current + ' ' + current).trim();
+            setTranscription(fullText);
           }
         });
       } catch (err) {
@@ -88,6 +92,8 @@ export const VoiceRecorder = ({
     setError(null);
     setTranscription('');
     transcriptionRef.current = '';
+    accumulatedFinalRef.current = '';
+    currentSessionFinalRef.current = '';
     
     try {
       if (Capacitor.isNativePlatform()) {
@@ -109,7 +115,7 @@ export const VoiceRecorder = ({
         const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         
         if (!SpeechRecognitionWeb) {
-          setError('Use Google Chrome or Edge for live microphone listening.');
+          setError('Use Google Chrome, Edge, or Safari with microphone access.');
           return;
         }
 
@@ -119,11 +125,29 @@ export const VoiceRecorder = ({
         recognition.lang = 'en-US';
 
         recognition.onresult = (event: any) => {
-          let currentTranscript = '';
-          for (let i = 0; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
+          let interim = '';
+          let newFinal = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const piece = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              newFinal += piece + ' ';
+            } else {
+              interim += piece;
+            }
           }
-          setTranscription(currentTranscript);
+
+          if (newFinal.trim()) {
+            currentSessionFinalRef.current = (currentSessionFinalRef.current + ' ' + newFinal).trim();
+          }
+
+          const totalCombined = [
+            accumulatedFinalRef.current,
+            currentSessionFinalRef.current,
+            interim
+          ].filter(Boolean).join(' ').trim();
+
+          setTranscription(totalCombined);
         };
 
         recognition.onerror = (event: any) => {
@@ -133,7 +157,12 @@ export const VoiceRecorder = ({
         };
 
         recognition.onend = () => {
-          if (isRecording && webRecognitionRef.current) {
+          if (webRecognitionRef.current) {
+            // Save current final transcript so restart does not wipe previous speech
+            if (currentSessionFinalRef.current) {
+              accumulatedFinalRef.current = (accumulatedFinalRef.current + ' ' + currentSessionFinalRef.current).trim();
+              currentSessionFinalRef.current = '';
+            }
             try {
               recognition.start();
             } catch (e) {}
