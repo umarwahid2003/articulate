@@ -44,11 +44,16 @@ export function getUserContext(): UserContext | null {
   return null;
 }
 
+/**
+ * Generate 3 personalized speaking topics using Groq (Llama 3.3 70B) or Gemini
+ */
 export async function generatePersonalizedTopics(
   userContext?: UserContext | null
 ): Promise<TopicSuggestion[]> {
+  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!geminiKey) {
+
+  if (!groqKey && !geminiKey) {
     return DEFAULT_TOPICS;
   }
 
@@ -58,46 +63,76 @@ export async function generatePersonalizedTopics(
   const interests = ctx?.interests?.join(', ') || 'Technology, Startups, Daily Life';
   const tone = ctx?.speakingTone || 'Professional & Articulate';
 
-  const prompt = `You are Grove, an expert English speaking coach.
+  const prompt = `You are Articulate, an expert English speaking coach.
 Generate 3 distinct, engaging, and personalized speaking topics tailored specifically for an English learner with:
 - Speaking Goal: "${goal}"
 - Current Proficiency Level: "${level}"
 - Personal Interests: "${interests}"
 - Desired Speaking Tone: "${tone}"
 
-Return STRICTLY a JSON array of 3 objects with this exact structure:
-[
-  {
-    "id": "topic-1",
-    "title": "Short punchy topic title (max 5 words)",
-    "description": "1 clear sentence explaining what to discuss",
-    "category": "1-2 word category (e.g. Job Interview, Tech & AI, Daily Life)",
-    "starterPrompt": "A natural, open-ended question the AI coach asks to start the conversation",
-    "emoji": "Relevant emoji"
-  }
-]`;
+Return STRICTLY a JSON object with a "topics" array containing 3 objects with this exact structure:
+{
+  "topics": [
+    {
+      "id": "topic-1",
+      "title": "Short punchy topic title (max 5 words)",
+      "description": "1 clear sentence explaining what to discuss",
+      "category": "1-2 word category (e.g. Job Interview, Tech & AI, Daily Life)",
+      "starterPrompt": "A natural, open-ended question the AI coach asks to start the conversation",
+      "emoji": "Relevant emoji"
+    }
+  ]
+}`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
-      })
-    });
+    // 1. Try Groq first if available (Llama 3.3 70B Versatile)
+    if (groqKey) {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7
+        })
+      });
 
-    if (!response.ok) {
-      console.warn("Failed to generate topics from Gemini 3.6 Flash, using fallback.");
-      return DEFAULT_TOPICS;
+      if (response.ok) {
+        const data = await response.json();
+        const content = JSON.parse(data.choices[0].message.content);
+        const list = Array.isArray(content) ? content : content.topics || content.items;
+        if (Array.isArray(list) && list.length > 0) {
+          return list;
+        }
+      }
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsed = JSON.parse(text);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+    // 2. Fallback to Gemini
+    if (geminiKey) {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = JSON.parse(text);
+        const list = Array.isArray(parsed) ? parsed : parsed.topics || parsed.items;
+        if (Array.isArray(list) && list.length > 0) {
+          return list;
+        }
+      }
     }
+
     return DEFAULT_TOPICS;
   } catch (err) {
     console.error("Error generating topics:", err);
@@ -105,11 +140,15 @@ Return STRICTLY a JSON array of 3 objects with this exact structure:
   }
 }
 
+/**
+ * Process spoken transcript and evaluate speech with Groq (Llama 3.3 70B) or Gemini
+ */
 export async function processSpeechWithAI(
   transcribedText: string, 
   history: Message[],
   activeTopic?: TopicSuggestion | null
 ): Promise<{ evaluation: AISpeechEvaluation; newHistory: Message[] }> {
+  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
 
@@ -128,7 +167,7 @@ export async function processSpeechWithAI(
 
   const topicContext = activeTopic ? `Current Session Topic: "${activeTopic.title}". Prompt was: "${activeTopic.starterPrompt}"` : 'Free speaking session.';
 
-  const systemPrompt = `You are Grove, an expert AI English speaking coach.
+  const systemPrompt = `You are Articulate, an expert AI English speaking coach.
 ${topicContext}
 
 USER PROFILE CONTEXT (The student configured these goals):
@@ -170,9 +209,41 @@ Respond STRICTLY in JSON format with this structure:
   const currentHistory = [...history, userMessage];
 
   try {
-    let evaluation: AISpeechEvaluation;
+    let evaluation: AISpeechEvaluation | null = null;
 
-    if (geminiKey) {
+    // 1. Try Groq if VITE_GROQ_API_KEY is provided
+    if (groqKey) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...currentHistory
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.3
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          evaluation = JSON.parse(data.choices[0].message.content);
+        } else {
+          console.warn(`Groq error ${response.status}: Falling back to backup model...`);
+        }
+      } catch (groqErr) {
+        console.warn("Groq request failed, attempting fallback:", groqErr);
+      }
+    }
+
+    // 2. Fallback to Gemini if evaluation not yet populated
+    if (!evaluation && geminiKey) {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,14 +253,17 @@ Respond STRICTLY in JSON format with this structure:
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`Gemini error: ${response.status} ${response.statusText}`);
+      if (response.ok) {
+        const data = await response.json();
+        const contentText = data.candidates[0].content.parts[0].text;
+        evaluation = JSON.parse(contentText);
+      } else {
+        throw new Error(`Gemini error: ${response.status}`);
       }
+    }
 
-      const data = await response.json();
-      const contentText = data.candidates[0].content.parts[0].text;
-      evaluation = JSON.parse(contentText);
-    } else if (deepseekKey) {
+    // 3. Fallback to DeepSeek if available
+    if (!evaluation && deepseekKey) {
       const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
@@ -203,14 +277,14 @@ Respond STRICTLY in JSON format with this structure:
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`DeepSeek error: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        evaluation = JSON.parse(data.choices[0].message.content);
       }
+    }
 
-      const data = await response.json();
-      evaluation = JSON.parse(data.choices[0].message.content);
-    } else {
-      throw new Error("No API key available");
+    if (!evaluation) {
+      throw new Error("No AI response could be generated from available providers.");
     }
 
     const aiMessage: Message = { role: 'assistant', content: JSON.stringify(evaluation) };
@@ -221,7 +295,7 @@ Respond STRICTLY in JSON format with this structure:
   } catch (error: any) {
     console.error("Error communicating with AI Coach:", error);
     
-    // Intelligent contextual fallback if network fails
+    // Intelligent contextual fallback if all networks fail
     const fallbackEval: AISpeechEvaluation = {
       overallScore: 78,
       scores: { fluency: 7, grammar: 7, vocabulary: 8, confidence: 8 },
