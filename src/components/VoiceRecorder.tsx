@@ -10,6 +10,17 @@ interface VoiceRecorderProps {
   activePrompt?: string;
 }
 
+function mergeTranscripts(prev: string, current: string): string {
+  const p = prev.trim();
+  const c = current.trim();
+  if (!p) return c;
+  if (!c) return p;
+  if (p === c) return p;
+  if (p.endsWith(c)) return p;
+  if (c.startsWith(p)) return c;
+  return `${p} ${c}`;
+}
+
 export const VoiceRecorder = ({ 
   onTranscriptionComplete, 
   isProcessing = false,
@@ -40,7 +51,7 @@ export const VoiceRecorder = ({
         await CapacitorSpeech.addListener('partialResults', (data: any) => {
           if (data.matches && data.matches.length > 0) {
             const current = data.matches[0];
-            const fullText = (accumulatedFinalRef.current + ' ' + current).trim();
+            const fullText = mergeTranscripts(accumulatedFinalRef.current, current);
             setTranscription(fullText);
           }
         });
@@ -79,8 +90,10 @@ export const VoiceRecorder = ({
         console.error(err);
       }
     }
-    
-    const textToSend = transcriptionRef.current.trim();
+
+    const totalCommitted = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+    const textToSend = (transcriptionRef.current || totalCommitted).trim();
+
     if (onTranscriptionComplete && textToSend) {
       onTranscriptionComplete(textToSend);
     } else if (!textToSend) {
@@ -125,29 +138,27 @@ export const VoiceRecorder = ({
         recognition.lang = 'en-US';
 
         recognition.onresult = (event: any) => {
+          let sessionFinal = '';
           let interim = '';
-          let newFinal = '';
 
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const piece = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              newFinal += piece + ' ';
+          // event.results already accumulates all results for the active session
+          for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              sessionFinal += result[0].transcript + ' ';
             } else {
-              interim += piece;
+              interim += result[0].transcript;
             }
           }
 
-          if (newFinal.trim()) {
-            currentSessionFinalRef.current = (currentSessionFinalRef.current + ' ' + newFinal).trim();
-          }
+          currentSessionFinalRef.current = sessionFinal.trim();
 
-          const totalCombined = [
-            accumulatedFinalRef.current,
-            currentSessionFinalRef.current,
-            interim
-          ].filter(Boolean).join(' ').trim();
+          const committed = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+          const totalDisplay = interim.trim() 
+            ? (committed ? `${committed} ${interim.trim()}` : interim.trim())
+            : committed;
 
-          setTranscription(totalCombined);
+          setTranscription(totalDisplay);
         };
 
         recognition.onerror = (event: any) => {
@@ -158,9 +169,9 @@ export const VoiceRecorder = ({
 
         recognition.onend = () => {
           if (webRecognitionRef.current) {
-            // Save current final transcript so restart does not wipe previous speech
+            // Transfer finalized session results before starting a fresh session
             if (currentSessionFinalRef.current) {
-              accumulatedFinalRef.current = (accumulatedFinalRef.current + ' ' + currentSessionFinalRef.current).trim();
+              accumulatedFinalRef.current = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
               currentSessionFinalRef.current = '';
             }
             try {
