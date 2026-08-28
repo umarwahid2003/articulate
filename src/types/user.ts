@@ -34,4 +34,7 @@ export interface AISpeechEvaluation {
   feedback: string;
   corrections: AICorrection[];
   reply: string;
+  wpm?: number;
+  fillerWords?: string[];
+  pacingNote?: string;
 }
