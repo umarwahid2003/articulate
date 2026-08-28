@@ -4,7 +4,7 @@ import { Layout } from '../components/Layout';
 import { NavigationBar } from '../components/NavigationBar';
 import { VoiceRecorder } from '../components/VoiceRecorder';
 import { processSpeechWithAI, generatePersonalizedTopics, Message } from '../lib/ai';
-import { Sparkles, Award, RefreshCw, X, ArrowRight, Lightbulb } from 'lucide-react';
+import { Sparkles, Award, RefreshCw, X, ArrowRight, Lightbulb, Zap, MessageCircle, Mic } from 'lucide-react';
 import { TopicSuggestion, AISpeechEvaluation, UserContext } from '../types/user';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,6 +26,10 @@ export interface SessionRecord {
     better: string;
     reason?: string;
   }[];
+  reply?: string;
+  wpm?: number;
+  fillerWords?: string[];
+  pacingNote?: string;
   durationSeconds: number;
 }
 
@@ -78,14 +82,14 @@ export const Practice = () => {
     setLastEvaluation(null);
   };
 
-  const handleTranscriptionComplete = async (text: string) => {
+  const handleTranscriptionComplete = async (text: string, durationSeconds: number = 30) => {
     setIsProcessing(true);
     try {
-      const { evaluation, newHistory } = await processSpeechWithAI(text, history, currentTopic);
+      const { evaluation, newHistory } = await processSpeechWithAI(text, history, currentTopic, durationSeconds);
       setHistory(newHistory);
       setLastEvaluation(evaluation);
 
-      // Save FULL Evaluation to Session History
+      // Save FULL Evaluation & Metrics to Session History
       const sessionRecord: SessionRecord = {
         id: Date.now().toString(),
         topic: currentTopic?.title || "Daily Speaking Practice",
@@ -95,7 +99,11 @@ export const Practice = () => {
         scores: evaluation.scores || { fluency: 7, grammar: 7, vocabulary: 8, confidence: 8 },
         feedback: evaluation.feedback,
         corrections: evaluation.corrections,
-        durationSeconds: 30
+        reply: evaluation.reply,
+        wpm: evaluation.wpm,
+        fillerWords: evaluation.fillerWords,
+        pacingNote: evaluation.pacingNote,
+        durationSeconds: durationSeconds
       };
 
       try {
@@ -218,21 +226,21 @@ export const Practice = () => {
                 backgroundColor: 'var(--surface-base)',
                 borderTopLeftRadius: '24px',
                 borderTopRightRadius: '24px',
-                padding: '24px 20px 84px',
+                padding: '20px 20px 84px',
                 zIndex: 301,
-                maxHeight: '80vh',
+                maxHeight: '84vh',
                 overflowY: 'auto',
                 boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '14px'
+                gap: '12px'
               }}
             >
               {/* Header with Score */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Award size={20} color="var(--grove-moss)" />
-                  <span style={{ fontWeight: 700, fontSize: '17px', color: 'var(--ink-base)' }}>AI Coach Feedback</span>
+                  <span style={{ fontWeight: 700, fontSize: '17px', color: 'var(--ink-base)' }}>Coach Evaluation</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ backgroundColor: 'rgba(31, 122, 108, 0.12)', color: 'var(--grove-moss)', fontWeight: 800, fontSize: '14px', padding: '4px 12px', borderRadius: '100px' }}>
@@ -264,9 +272,45 @@ export const Practice = () => {
                 </div>
               </div>
 
+              {/* Speaking Pace & Filler Word Metrics Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ backgroundColor: 'rgba(31, 122, 108, 0.08)', padding: '10px 12px', borderRadius: '12px', border: '1px solid rgba(31, 122, 108, 0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={16} color="var(--grove-moss)" />
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--ink-secondary)', fontWeight: 500 }}>Speaking Pace</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-base)' }}>
+                      {lastEvaluation.wpm || 130} WPM <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--grove-moss)' }}>({lastEvaluation.pacingNote || 'Optimal'})</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Mic size={16} color="var(--ink-secondary)" />
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--ink-secondary)', fontWeight: 500 }}>Filler Words</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-base)' }}>
+                      {lastEvaluation.fillerWords?.length ? `${lastEvaluation.fillerWords.length} detected` : '0 Clean flow'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coach Conversational Reply & Follow-Up */}
+              {lastEvaluation.reply && (
+                <div style={{ backgroundColor: 'var(--surface-raised)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <MessageCircle size={18} color="var(--grove-moss)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', marginBottom: '2px' }}>Coach Response & Follow-up</div>
+                    <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
+                      {lastEvaluation.reply}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Summary Assessment */}
               <div style={{ backgroundColor: 'var(--surface-raised)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                <p style={{ margin: 0, fontSize: '14px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
+                <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
                   {lastEvaluation.feedback}
                 </p>
               </div>
@@ -276,7 +320,7 @@ export const Practice = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Lightbulb size={14} />
-                    <span>Specific Corrections & Upgrades</span>
+                    <span>Linguistic Precision Upgrades</span>
                   </div>
                   
                   {lastEvaluation.corrections.map((c, i) => (
@@ -316,7 +360,7 @@ export const Practice = () => {
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
-                  marginTop: '6px'
+                  marginTop: '4px'
                 }}
               >
                 <span>Continue to Next Topic</span>

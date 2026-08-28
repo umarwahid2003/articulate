@@ -45,6 +45,27 @@ export function getUserContext(): UserContext | null {
 }
 
 /**
+ * Calculate speaking rate (Words Per Minute) and detect filler words
+ */
+export function calculateSpeakingMetrics(text: string, durationSeconds: number) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const wordCount = words.length;
+  const minutes = Math.max(durationSeconds / 60, 0.08);
+  const wpm = Math.round(wordCount / minutes);
+
+  const fillerRegex = /\b(um|uh|er|ah|like|you know|basically|actually|literally|sort of|kind of)\b/gi;
+  const matches = text.match(fillerRegex) || [];
+  const fillerWords = matches.map(m => m.toLowerCase());
+
+  let pacingNote = 'Optimal Pace';
+  if (wpm < 110) pacingNote = 'Deliberate / Slow';
+  else if (wpm > 165) pacingNote = 'Fast / Hurried';
+  else pacingNote = 'Natural & Fluid';
+
+  return { wpm, fillerWords, pacingNote };
+}
+
+/**
  * Transcribe audio blob with Groq Whisper Large V3 Turbo (high precision, sub-300ms)
  */
 export async function transcribeAudioWithWhisper(audioBlob: Blob): Promise<string | null> {
@@ -114,8 +135,8 @@ export async function generatePersonalizedTopics(
   const interests = ctx?.interests?.join(', ') || 'Technology, Startups, Daily Life';
   const tone = ctx?.speakingTone || 'Professional & Articulate';
 
-  const prompt = `You are Articulate, an expert English speaking coach.
-Generate 3 distinct, engaging, and personalized speaking topics tailored specifically for an English learner with:
+  const prompt = `You are Articulate, a warm, elite English speaking mentor.
+Generate 3 distinct, stimulating speaking topics specifically for a student practicing English:
 - Speaking Goal: "${goal}"
 - Current Proficiency Level: "${level}"
 - Personal Interests: "${interests}"
@@ -136,7 +157,6 @@ Return STRICTLY a JSON object with a "topics" array containing 3 objects with th
 }`;
 
   try {
-    // 1. Try Groq first if available (Llama 3.3 70B Versatile)
     if (groqKey) {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -162,7 +182,6 @@ Return STRICTLY a JSON object with a "topics" array containing 3 objects with th
       }
     }
 
-    // 2. Fallback to Gemini
     if (geminiKey) {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
         method: 'POST',
@@ -192,16 +211,19 @@ Return STRICTLY a JSON object with a "topics" array containing 3 objects with th
 }
 
 /**
- * Process spoken transcript and evaluate speech with Groq (Llama 3.3 70B) or Gemini
+ * Process spoken transcript and evaluate speech with enhanced human-like coaching
  */
 export async function processSpeechWithAI(
   transcribedText: string, 
   history: Message[],
-  activeTopic?: TopicSuggestion | null
+  activeTopic?: TopicSuggestion | null,
+  durationSeconds: number = 30
 ): Promise<{ evaluation: AISpeechEvaluation; newHistory: Message[] }> {
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+
+  const metrics = calculateSpeakingMetrics(transcribedText, durationSeconds);
 
   const ctx = getUserContext();
   const goal = ctx?.goal || 'General Speaking Fluency';
@@ -214,46 +236,46 @@ export async function processSpeechWithAI(
     ? 'CRITIQUE RIGOR: STRICT. Zero sugarcoating. Analyze with exceptional linguistic precision. Catch subtle grammar flaws, awkward preposition usage, filler words, and informal register.'
     : feedbackStyle === 'gentle'
     ? 'CRITIQUE RIGOR: GENTLE & ENCOURAGING. Emphasize confidence, flow, and communication intent. Only correct 1-2 major grammatical issues.'
-    : 'CRITIQUE RIGOR: BALANCED. Genuinely appreciate clear expression while directly highlighting critical grammar/preposition errors and concrete upgrade opportunities.';
+    : 'CRITIQUE RIGOR: BALANCED & ACTIONABLE. Acknowledge great communicative flow while directly showing 1-2 precise grammatical/idiomatic upgrades.';
 
   const topicContext = activeTopic ? `Current Session Topic: "${activeTopic.title}". Prompt was: "${activeTopic.starterPrompt}"` : 'Free speaking session.';
 
-  const systemPrompt = `You are Articulate, an expert AI English speaking coach.
+  const systemPrompt = `You are Articulate, an elite, highly empathetic AI English speaking coach and conversational partner.
 ${topicContext}
 
-USER PROFILE CONTEXT (The student configured these goals):
-- Primary Goal: "${goal}"
-- Target Level: "${level}"
-- Topic Interests: "${interests}"
-- Desired Speaking Register/Tone: "${tone}"
+STUDENT PROFILE:
+- Target Goal: "${goal}"
+- Proficiency Level: "${level}"
+- Interests: "${interests}"
+- Desired Tone/Register: "${tone}"
 - ${styleInstruction}
 
-The user just spoke the following words via speech recognition:
+STUDENT SPOKE:
 "${transcribedText}"
 
-Perform a deep, precise, and authentic evaluation of what the user actually said.
-1. APPRECIATION: Genuinely acknowledge what was expressed clearly, good vocabulary used, or strong communicative intent.
-2. CRITICAL FEEDBACK: Specifically point out grammatical inaccuracies, incorrect prepositions, run-on sentences, clumsy phrasing, or missing words relative to their goal ("${goal}").
-3. CONCRETE CORRECTIONS: Extract the exact flawed phrases from what they said and provide native, polished alternatives with clear explanations.
+COACHING MANDATE:
+1. APPRECIATION & VALUE: Genuinely acknowledge the core idea they communicated and validate their point.
+2. CRITICAL LINGUISTIC UPGRADES: Identify awkward prepositions, grammatical tenses, sentence transitions, or word choices. Provide natural, native-level phrasing with clear rationales.
+3. CONVERSATIONAL REPLY & ACTIVE LISTENING: Reply naturally to what they actually said with warmth, and ask 1 engaging, insightful follow-up question to keep the conversation flowing.
 
-Respond STRICTLY in JSON format with this structure:
+Respond STRICTLY in JSON format matching this schema:
 {
-  "overallScore": 78, // Integer 0-100 reflecting genuine quality based on grammar, fluency, vocab, coherence
+  "overallScore": 82, // Integer 0-100 reflecting grammar, fluency, vocabulary, and communication clarity
   "scores": {
-    "fluency": 7,     // Integer 1-10 (flow, sentence connectedness)
-    "grammar": 6,     // Integer 1-10 (tense accuracy, prepositions, agreement)
-    "vocabulary": 7,  // Integer 1-10 (word choice variety, precision)
-    "confidence": 8   // Integer 1-10 (assertiveness, directness)
+    "fluency": 8,     // Integer 1-10 (flow, coherence, naturalness)
+    "grammar": 7,     // Integer 1-10 (tense accuracy, prepositions, agreement)
+    "vocabulary": 8,  // Integer 1-10 (word variety and contextual precision)
+    "confidence": 8   // Integer 1-10 (assertiveness, direct expression)
   },
-  "feedback": "2 sentences combining genuine appreciation for their clear ideas with constructive, critical advice on fixing specific errors.",
+  "feedback": "2 concise sentences: first validate what was expressed clearly, second provide the single most important linguistic upgrade.",
   "corrections": [
     {
-      "original": "Exact phrase from user transcript that had an error or awkward phrasing",
-      "better": "Polished, natural native speaker phrasing",
-      "reason": "Clear linguistic explanation of why the upgrade is better"
+      "original": "Exact phrase from student's speech with mistake or clumsy wording",
+      "better": "Native, polished phrasing",
+      "reason": "Clear linguistic explanation of why this upgrade sounds more natural"
     }
   ],
-  "reply": "A natural, friendly 2-sentence conversational response answering their point and asking an engaging follow-up question to keep them speaking."
+  "reply": "A warm, natural 2-sentence conversational response answering their point and asking a thoughtful follow-up question."
 }`;
 
   const userMessage: Message = { role: 'user', content: transcribedText };
@@ -262,7 +284,6 @@ Respond STRICTLY in JSON format with this structure:
   try {
     let evaluation: AISpeechEvaluation | null = null;
 
-    // 1. Try Groq if VITE_GROQ_API_KEY is provided
     if (groqKey) {
       try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -278,22 +299,19 @@ Respond STRICTLY in JSON format with this structure:
               ...currentHistory
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.3
+            temperature: 0.35
           })
         });
 
         if (response.ok) {
           const data = await response.json();
           evaluation = JSON.parse(data.choices[0].message.content);
-        } else {
-          console.warn(`Groq error ${response.status}: Falling back to backup model...`);
         }
       } catch (groqErr) {
-        console.warn("Groq request failed, attempting fallback:", groqErr);
+        console.warn("Groq request fallback:", groqErr);
       }
     }
 
-    // 2. Fallback to Gemini if evaluation not yet populated
     if (!evaluation && geminiKey) {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
         method: 'POST',
@@ -308,12 +326,9 @@ Respond STRICTLY in JSON format with this structure:
         const data = await response.json();
         const contentText = data.candidates[0].content.parts[0].text;
         evaluation = JSON.parse(contentText);
-      } else {
-        throw new Error(`Gemini error: ${response.status}`);
       }
     }
 
-    // 3. Fallback to DeepSeek if available
     if (!evaluation && deepseekKey) {
       const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
@@ -335,8 +350,13 @@ Respond STRICTLY in JSON format with this structure:
     }
 
     if (!evaluation) {
-      throw new Error("No AI response could be generated from available providers.");
+      throw new Error("No AI response generated.");
     }
+
+    // Attach calculated speaking metrics
+    evaluation.wpm = metrics.wpm;
+    evaluation.fillerWords = metrics.fillerWords;
+    evaluation.pacingNote = metrics.pacingNote;
 
     const aiMessage: Message = { role: 'assistant', content: JSON.stringify(evaluation) };
     return {
@@ -346,19 +366,21 @@ Respond STRICTLY in JSON format with this structure:
   } catch (error: any) {
     console.error("Error communicating with AI Coach:", error);
     
-    // Intelligent contextual fallback if all networks fail
     const fallbackEval: AISpeechEvaluation = {
       overallScore: 78,
       scores: { fluency: 7, grammar: 7, vocabulary: 8, confidence: 8 },
-      feedback: "Good clarity in sharing your thoughts! Work on polishing your sentence transitions and preposition choices.",
+      feedback: "Great clarity and expression! Focus on polish and preposition accuracy to reach native fluency.",
       corrections: [
         {
           original: transcribedText.length > 30 ? transcribedText.slice(0, 30) + '...' : transcribedText,
-          better: "Ensure complete clauses with proper prepositions and tenses.",
-          reason: "Focus on subject-verb agreement and precise academic/professional terminology."
+          better: "Ensure complete clauses with precise tenses and transition words.",
+          reason: "Focus on subject-verb agreement and professional phrasing."
         }
       ],
-      reply: "Thank you for sharing that! Could you elaborate on what inspired you in this direction?"
+      reply: "Thank you for sharing your thoughts! How did you first get interested in this area?",
+      wpm: metrics.wpm,
+      fillerWords: metrics.fillerWords,
+      pacingNote: metrics.pacingNote
     };
 
     return {

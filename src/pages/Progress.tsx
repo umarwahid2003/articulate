@@ -6,7 +6,7 @@ import { Mascot } from '../components/Mascot';
 import { Card } from '../components/Card';
 import { SessionRecord } from './Practice';
 import { UserContext } from '../types/user';
-import { Check, X, Lightbulb, MessageSquare, ChevronRight, Target, Flame, Trophy } from 'lucide-react';
+import { Check, X, Lightbulb, MessageSquare, ChevronRight, Target, Flame, Trophy, Zap, Mic, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Progress = () => {
@@ -380,6 +380,42 @@ export const Progress = () => {
                   </strong>
                 </div>
               </div>
+
+              {/* Speaking Pace & Filler Word Metrics Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ backgroundColor: 'rgba(31, 122, 108, 0.08)', padding: '10px 12px', borderRadius: '12px', border: '1px solid rgba(31, 122, 108, 0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={16} color="var(--grove-moss)" />
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--ink-secondary)', fontWeight: 500 }}>Speaking Pace</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-base)' }}>
+                      {selectedSession.wpm || 130} WPM <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--grove-moss)' }}>({selectedSession.pacingNote || 'Optimal'})</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Mic size={16} color="var(--ink-secondary)" />
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--ink-secondary)', fontWeight: 500 }}>Filler Words</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-base)' }}>
+                      {selectedSession.fillerWords?.length ? `${selectedSession.fillerWords.length} detected` : '0 Clean flow'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coach Conversational Reply & Follow-Up */}
+              {selectedSession.reply && (
+                <div style={{ backgroundColor: 'var(--surface-raised)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <MessageCircle size={18} color="var(--grove-moss)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', marginBottom: '2px' }}>Coach Response & Follow-up</div>
+                    <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
+                      {selectedSession.reply}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Assessment Feedback */}
               <div style={{ backgroundColor: 'var(--surface-raised)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>

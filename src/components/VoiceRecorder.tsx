@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { transcribeAudioWithWhisper } from '../lib/ai';
 
 interface VoiceRecorderProps {
-  onTranscriptionComplete?: (text: string) => void;
+  onTranscriptionComplete?: (text: string, durationSeconds: number) => void;
   isProcessing?: boolean;
   activePrompt?: string;
 }
@@ -32,6 +32,7 @@ export const VoiceRecorder = ({
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [transcription, setTranscription] = useState<string>('');
+  const [audioLevels, setAudioLevels] = useState<number[]>([0.15, 0.2, 0.3, 0.2, 0.15]);
   
   const webRecognitionRef = useRef<any>(null);
   const transcriptionRef = useRef<string>('');
@@ -42,14 +43,21 @@ export const VoiceRecorder = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const elapsedRef = useRef<number>(0);
 
   useEffect(() => {
     transcriptionRef.current = transcription;
-    // Auto-scroll to bottom of transcript box as live words stream in
     if (transcriptScrollRef.current) {
       transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
     }
   }, [transcription]);
+
+  useEffect(() => {
+    elapsedRef.current = elapsed;
+  }, [elapsed]);
 
   useEffect(() => {
     const addListener = async () => {
@@ -77,16 +85,69 @@ export const VoiceRecorder = ({
     };
   }, []);
 
+  // Audio frequency analyser loop
+  const startAudioAnalysis = (stream: MediaStream) => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      
+      const audioCtx = new AudioCtx();
+      audioContextRef.current = audioCtx;
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.7;
+      analyserRef.current = analyser;
+
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const updateWaveform = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        // Sample 7 frequency points across speech spectrum
+        const indices = [2, 4, 6, 8, 10, 12, 14];
+        const levels = indices.map(idx => {
+          const val = (dataArray[idx] || 0) / 255;
+          return Math.max(0.12, Math.min(1.0, val * 1.6));
+        });
+
+        setAudioLevels(levels);
+        animFrameRef.current = requestAnimationFrame(updateWaveform);
+      };
+
+      updateWaveform();
+    } catch (err) {
+      console.warn("Waveform visualizer note:", err);
+    }
+  };
+
+  const stopAudioAnalysis = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch (e) {}
+      audioContextRef.current = null;
+    }
+    setAudioLevels([0.15, 0.2, 0.3, 0.2, 0.15]);
+  };
+
   const stopRecording = useCallback(async () => {
     setIsRecording(false);
+    stopAudioAnalysis();
     
     // 1. Stop Web Speech Recognition
     if (webRecognitionRef.current) {
       try {
         webRecognitionRef.current.stop();
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
       webRecognitionRef.current = null;
     }
 
@@ -98,7 +159,7 @@ export const VoiceRecorder = ({
       }
     }
 
-    // 2. Stop MediaRecorder and grab audio blob
+    // 2. Stop MediaRecorder
     let recordedBlob: Blob | null = null;
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       await new Promise<void>((resolve) => {
@@ -122,7 +183,7 @@ export const VoiceRecorder = ({
       recordedBlob = new Blob(audioChunksRef.current, { type: mime });
     }
 
-    // 3. Compute fallback live transcript
+    // 3. Compute live transcript fallback
     const totalCommitted = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
     let finalText = (transcriptionRef.current || totalCommitted).trim();
 
@@ -142,8 +203,9 @@ export const VoiceRecorder = ({
       }
     }
 
+    const recordedSeconds = Math.max(1, elapsedRef.current);
     if (onTranscriptionComplete && finalText) {
-      onTranscriptionComplete(finalText);
+      onTranscriptionComplete(finalText, recordedSeconds);
     } else if (!finalText) {
       setError("Didn't catch any speech. Tap mic and try again.");
     }
@@ -158,11 +220,12 @@ export const VoiceRecorder = ({
     audioChunksRef.current = [];
     
     try {
-      // 1. Initialize Audio MediaRecorder for high-fidelity Groq Whisper transcription
+      // 1. Initialize Audio MediaRecorder and Waveform Analyser
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           mediaStreamRef.current = stream;
+          startAudioAnalysis(stream);
 
           let mimeType = 'audio/webm;codecs=opus';
           if (typeof MediaRecorder !== 'undefined') {
@@ -303,7 +366,7 @@ export const VoiceRecorder = ({
       boxSizing: 'border-box'
     }}>
       
-      {/* 3D Mascot Hero (Flexible Container) */}
+      {/* 3D Mascot Hero */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -316,7 +379,7 @@ export const VoiceRecorder = ({
         <Mascot state={mascotState} size={170} />
       </div>
 
-      {/* Dynamic Speech / Prompt Box with Fixed Height and Auto-Scroll */}
+      {/* Dynamic Speech / Prompt Box */}
       <div 
         ref={transcriptScrollRef}
         style={{ 
@@ -369,7 +432,7 @@ export const VoiceRecorder = ({
         )}
       </div>
 
-      {/* Rock-Solid Fixed Position Timer & Mic Controls */}
+      {/* Rock-Solid Fixed Position Timer, Live Waveform & Mic Controls */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
@@ -378,18 +441,41 @@ export const VoiceRecorder = ({
         marginBottom: '4px',
         flexShrink: 0 
       }}>
-        {/* Timer */}
+        
+        {/* Real-time Dynamic Audio Waveform Equalizer Bars */}
         <div style={{ 
-          fontSize: '15px', 
-          fontWeight: 700, 
-          fontFamily: 'var(--font-mono)', 
-          color: isRecording ? '#E53E3E' : 'var(--ink-secondary)', 
-          marginBottom: '8px',
-          height: '20px',
-          display: 'flex',
-          alignItems: 'center'
+          height: '24px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          gap: '4px', 
+          marginBottom: '6px' 
         }}>
-          {isRecording ? formatTime(elapsed) : (isProcessing || isWhisperTranscribing) ? 'Thinking...' : 'Ready'}
+          {isRecording ? (
+            audioLevels.map((lvl, i) => (
+              <div 
+                key={i} 
+                style={{ 
+                  width: '4px', 
+                  height: `${Math.max(4, Math.round(lvl * 24))}px`, 
+                  borderRadius: '3px', 
+                  backgroundColor: 'var(--grove-moss)', 
+                  transition: 'height 0.08s ease-out' 
+                }} 
+              />
+            ))
+          ) : (
+            <div style={{ 
+              fontSize: '15px', 
+              fontWeight: 700, 
+              fontFamily: 'var(--font-mono)', 
+              color: 'var(--ink-secondary)', 
+              display: 'flex', 
+              alignItems: 'center' 
+            }}>
+              {(isProcessing || isWhisperTranscribing) ? 'Thinking...' : 'Ready'}
+            </div>
+          )}
         </div>
 
         {/* Mic / Stop Button */}
@@ -423,9 +509,9 @@ export const VoiceRecorder = ({
           )}
         </button>
 
-        {/* Action Caption */}
+        {/* Action Caption / Live Timer */}
         <span style={{ marginTop: '8px', fontSize: '12px', color: 'var(--ink-secondary)', fontWeight: 500, height: '16px' }}>
-          {isRecording ? 'Tap square when finished' : 'Tap to speak'}
+          {isRecording ? `${formatTime(elapsed)} • Tap square to evaluate` : 'Tap to speak'}
         </span>
       </div>
 
