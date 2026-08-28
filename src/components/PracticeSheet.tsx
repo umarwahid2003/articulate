@@ -52,7 +52,7 @@ export const PracticeSheet = ({ isOpen, onClose }: PracticeSheetProps) => {
               gap: '12px'
             }}
           >
-            <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border-strong)', borderRadius: '2px', margin: '0 auto 16px' }} />
+            <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border-hairline)', borderRadius: '2px', margin: '0 auto 16px' }} />
             
             <h3 style={{ fontSize: '22px', fontFamily: 'var(--font-display)', marginBottom: '16px', textAlign: 'center' }}>
               How would you like to practice?

@@ -32,9 +32,12 @@ export interface AISpeechEvaluation {
     confidence: number;
   };
   feedback: string;
+  keyPoints?: string[];
   corrections: AICorrection[];
   reply: string;
+  followUpQuestion?: string;
   wpm?: number;
   fillerWords?: string[];
   pacingNote?: string;
 }
+

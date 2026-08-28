@@ -1,27 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
 import { NavigationBar } from '../components/NavigationBar';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { calculateStreak } from '../lib/streak';
 import { LogOut, User, Bell, Shield, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
   const navigate = useNavigate();
   const { profile, user } = useAuth();
-  const [sessionCount, setSessionCount] = useState<number>(0);
+  const [sessions, setSessions] = useState<any[]>([]);
 
   useEffect(() => {
     try {
       const historyRaw = localStorage.getItem('grove_session_history');
       if (historyRaw) {
-        const list = JSON.parse(historyRaw);
-        setSessionCount(list.length);
+        setSessions(JSON.parse(historyRaw));
       }
     } catch (e) {
       console.error("Error reading sessions:", e);
     }
   }, []);
+
+  const sessionCount = sessions.length;
+  const streak = calculateStreak(sessions) || profile?.current_streak || 0;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -43,45 +47,71 @@ export function Profile() {
     <Layout className="page-with-bottom-nav">
       <NavigationBar />
       
-      <div style={{ padding: '24px', paddingBottom: '140px', display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '16px' }}>
+      <div style={{ padding: '8px 20px 96px', display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '4px' }}>
         
         {/* User Info Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.35 }}
+          style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
+        >
           <div style={{ 
-            width: '80px', 
-            height: '80px', 
-            borderRadius: '40px', 
-            backgroundColor: 'var(--grove-moss)',
+            width: '66px', 
+            height: '66px', 
+            borderRadius: '33px', 
+            background: 'var(--gorget-gradient)',
+            padding: '2px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '32px',
-            fontFamily: 'var(--font-display)'
+            justifyContent: 'center'
           }}>
-            {name.charAt(0).toUpperCase()}
+            <div style={{ 
+              width: '62px', 
+              height: '62px', 
+              borderRadius: '31px', 
+              backgroundColor: 'var(--grove-moss)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '24px',
+              fontFamily: 'var(--font-display)'
+            }}>
+              {name.charAt(0).toUpperCase()}
+            </div>
           </div>
           <div>
             <h1 style={{ fontSize: '28px', fontFamily: 'var(--font-display)', color: 'var(--ink-base)' }}>{name}</h1>
             <p style={{ color: 'var(--ink-secondary)', fontSize: '15px', marginTop: '4px' }}>{email}</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats */}
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ flex: 1, backgroundColor: 'var(--surface-raised)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span style={{ fontSize: '24px', fontFamily: 'var(--font-display)', color: 'var(--ink-base)' }}>{profile?.current_streak || (sessionCount > 0 ? 1 : 0)}</span>
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.35, delay: 0.08 }}
+          style={{ display: 'flex', gap: '16px' }}
+        >
+          <div style={{ flex: 1, backgroundColor: 'var(--surface-raised)', borderRadius: '20px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span style={{ fontSize: '24px', fontFamily: 'var(--font-display)', color: 'var(--ink-base)' }}>{streak}</span>
             <span style={{ color: 'var(--ink-secondary)', fontSize: '13px', marginTop: '4px' }}>Day Streak</span>
           </div>
-          <div style={{ flex: 1, backgroundColor: 'var(--surface-raised)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ flex: 1, backgroundColor: 'var(--surface-raised)', borderRadius: '20px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <span style={{ fontSize: '24px', fontFamily: 'var(--font-display)', color: 'var(--ink-base)' }}>{sessionCount}</span>
             <span style={{ color: 'var(--ink-secondary)', fontSize: '13px', marginTop: '4px' }}>Sessions</span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Settings List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '18px', fontFamily: 'var(--font-display)', color: 'var(--ink-base)', marginBottom: '8px', paddingLeft: '8px' }}>Settings</h2>
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.35, delay: 0.16 }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+        >
+          <h2 style={{ fontSize: '18px', fontFamily: 'var(--font-display)', color: 'var(--ink-base)', marginBottom: '4px', paddingLeft: '8px' }}>Settings</h2>
           
           <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', overflow: 'hidden' }}>
             <SettingRow 
@@ -96,14 +126,18 @@ export function Profile() {
             <div style={{ height: '1px', backgroundColor: 'var(--surface-sunken)', marginLeft: '52px' }} />
             <SettingRow icon={<HelpCircle size={20} />} title="Help & Support" />
           </div>
-        </div>
+        </motion.div>
 
         {/* Sign Out Button */}
-        <div style={{ marginTop: '8px' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.35, delay: 0.24 }}
+        >
           <button 
             style={{ 
               width: '100%', 
-              color: 'var(--grove-red)', 
+              color: 'var(--error-brick)', 
               backgroundColor: 'var(--surface-raised)', 
               borderRadius: '24px',
               border: 'none',
@@ -120,7 +154,7 @@ export function Profile() {
             <LogOut size={20} style={{ marginRight: '12px' }} />
             Sign Out
           </button>
-        </div>
+        </motion.div>
         
       </div>
     </Layout>

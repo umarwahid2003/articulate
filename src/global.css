@@ -8,3 +8,59 @@
     backdrop-filter: blur(10px);
   }
 }
+
+/* Grove Spin — used on loading icons (Sparkles, Loader2, RefreshCw) */
+@keyframes grove-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.grove-spin {
+  animation: grove-spin 1s linear infinite;
+}
+
+/* Pulse — used on listening indicator */
+@keyframes animate-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse {
+  animation: animate-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Mic button recording pulse ring */
+@keyframes mic-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(229, 62, 62, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
+  }
+}
+
+.mic-pulse-ring {
+  animation: mic-pulse-ring 1.8s ease-out infinite;
+}
+
+/* Settings row interactive state */
+.grove-setting-row {
+  transition: background-color 0.15s ease;
+}
+
+.grove-setting-row:hover {
+  background-color: var(--surface-sunken);
+}
+
+.grove-setting-row:active {
+  background-color: var(--surface-sunken);
+  opacity: 0.8;
+}
+
+/* Page with bottom nav safe area padding */
+.page-with-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

@@ -442,28 +442,42 @@ export const VoiceRecorder = ({
         flexShrink: 0 
       }}>
         
-        {/* Real-time Dynamic Audio Waveform Equalizer Bars */}
+        {/* Timer + Waveform */}
         <div style={{ 
-          height: '24px', 
+          height: '48px', 
           display: 'flex', 
+          flexDirection: 'column',
           alignItems: 'center', 
           justifyContent: 'center', 
-          gap: '4px', 
+          gap: '6px', 
           marginBottom: '6px' 
         }}>
           {isRecording ? (
-            audioLevels.map((lvl, i) => (
-              <div 
-                key={i} 
-                style={{ 
-                  width: '4px', 
-                  height: `${Math.max(4, Math.round(lvl * 24))}px`, 
-                  borderRadius: '3px', 
-                  backgroundColor: 'var(--grove-moss)', 
-                  transition: 'height 0.08s ease-out' 
-                }} 
-              />
-            ))
+            <>
+              <div style={{ 
+                fontSize: '20px', 
+                fontWeight: 700, 
+                fontFamily: 'var(--font-mono)', 
+                color: 'var(--ink-primary)',
+                letterSpacing: '0.05em'
+              }}>
+                {formatTime(elapsed)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                {audioLevels.map((lvl, i) => (
+                  <div 
+                    key={i} 
+                    style={{ 
+                      width: '3px', 
+                      height: `${Math.max(3, Math.round(lvl * 20))}px`, 
+                      borderRadius: '2px', 
+                      backgroundColor: 'var(--grove-moss)', 
+                      transition: 'height 0.08s ease-out' 
+                    }} 
+                  />
+                ))}
+              </div>
+            </>
           ) : (
             <div style={{ 
               fontSize: '15px', 
@@ -482,6 +496,7 @@ export const VoiceRecorder = ({
         <button
           onClick={toggleRecording}
           disabled={isProcessing || isWhisperTranscribing}
+          className={isRecording ? 'mic-pulse-ring' : ''}
           style={{ 
             width: '68px',
             height: '68px',
@@ -511,7 +526,7 @@ export const VoiceRecorder = ({
 
         {/* Action Caption / Live Timer */}
         <span style={{ marginTop: '8px', fontSize: '12px', color: 'var(--ink-secondary)', fontWeight: 500, height: '16px' }}>
-          {isRecording ? `${formatTime(elapsed)} • Tap square to evaluate` : 'Tap to speak'}
+          {isRecording ? 'Tap square to finish & evaluate' : 'Tap to speak'}
         </span>
       </div>
 

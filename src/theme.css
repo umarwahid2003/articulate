@@ -8,6 +8,7 @@
   --ink-secondary: #5B615E;
   --ink-tertiary: #8B918D;
   --border-hairline: #E3E1DA;
+  --border-subtle: rgba(0, 0, 0, 0.06);
 
   /* Tier 2 - The Grove Accent */
   --grove-moss: #2F4B3C;
@@ -70,6 +71,7 @@
     --ink-secondary: #9CA39E;
     --ink-tertiary: #666C68;
     --border-hairline: rgba(37, 42, 39, 0.18);
+    --border-subtle: rgba(255, 255, 255, 0.06);
     --grove-moss: #335241;
     --grove-moss-tint: #1B2620;
     --error-brick: #C96A5C;
@@ -96,4 +98,27 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.02em;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background-color: var(--grove-moss-tint);
+  color: var(--ink-primary);
+}
+
+/* Scrollbar polish */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hairline);
+  border-radius: 4px;
 }

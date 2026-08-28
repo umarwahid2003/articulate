@@ -6,7 +6,8 @@ import { Mascot } from '../components/Mascot';
 import { Card } from '../components/Card';
 import { SessionRecord } from './Practice';
 import { UserContext } from '../types/user';
-import { Check, X, Lightbulb, MessageSquare, ChevronRight, Target, Flame, Trophy, Zap, Mic, MessageCircle } from 'lucide-react';
+import { calculateStreak, getUniquePracticedDays, toLocalDateString } from '../lib/streak';
+import { Check, X, Lightbulb, MessageSquare, ChevronRight, Target, Flame, Trophy, Zap, Mic, MessageCircle, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Progress = () => {
@@ -36,9 +37,9 @@ export const Progress = () => {
 
   // Daily Practice Time vs Goal Calculation
   const dailyGoalMinutes = userContext?.dailyGoalMinutes || 5;
-  const todayDateString = new Date().toDateString();
+  const todayDateKey = toLocalDateString(new Date());
   const todaySessions = sessions.filter(
-    s => new Date(s.timestamp).toDateString() === todayDateString
+    s => toLocalDateString(s.timestamp) === todayDateKey
   );
 
   // Total seconds practiced today
@@ -48,46 +49,9 @@ export const Progress = () => {
   // Calculate percentage toward daily goal
   const dailyProgressPercent = Math.min(100, Math.round((todaySeconds / (dailyGoalMinutes * 60)) * 100));
 
-  // Unique practiced days count
-  const uniquePracticedDays = new Set(
-    sessions.map(s => new Date(s.timestamp).toDateString())
-  ).size;
-
-  // Active consecutive streak calculation
-  const calculateStreak = () => {
-    if (sessions.length === 0) return 0;
-    const sortedDays = Array.from(new Set(
-      sessions.map(s => {
-        const d = new Date(s.timestamp);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-      })
-    )).sort((a, b) => b - a);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayTime = today.getTime();
-    const yesterdayTime = todayTime - 86400000;
-
-    let streak = 0;
-    let expectedTime = sortedDays[0] === todayTime ? todayTime : sortedDays[0] === yesterdayTime ? yesterdayTime : null;
-
-    if (expectedTime === null) {
-      return 0;
-    }
-
-    for (let dayTime of sortedDays) {
-      if (dayTime === expectedTime) {
-        streak++;
-        expectedTime -= 86400000;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  };
-
-  const currentStreak = calculateStreak();
+  // Unique practiced days count & active consecutive streak
+  const uniquePracticedDays = getUniquePracticedDays(sessions);
+  const currentStreak = calculateStreak(sessions);
 
   const formatTime = (isoString: string) => {
     try {
@@ -141,7 +105,7 @@ export const Progress = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '80px', marginTop: '16px' }}>
         
         {/* Top Daily Practice Time vs Goal Card */}
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'space-between', alignItems: 'center', padding: '24px', backgroundColor: 'var(--surface-raised)', borderRadius: 'var(--radius-lg)' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: 'flex', gap: '16px', justifyContent: 'space-between', alignItems: 'center', padding: '24px', backgroundColor: 'var(--surface-raised)', borderRadius: 'var(--radius-lg)' }}>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: '28px', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>
               {dailyProgressPercent >= 100 
@@ -160,10 +124,10 @@ export const Progress = () => {
           <ProgressRing progress={dailyProgressPercent} size="large">
             {dailyProgressPercent}%
           </ProgressRing>
-        </div>
+        </motion.div>
 
         {/* 3 Core Achievements with Theme-Matched Icons */}
-        <div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
           <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', marginBottom: '16px', marginTop: '16px' }}>
             Achievements
           </h2>
@@ -171,8 +135,10 @@ export const Progress = () => {
             {achievements.map((ach) => {
               const Icon = ach.icon;
               return (
-                <div 
+                <motion.div 
                   key={ach.id} 
+                  whileHover={{ scale: 1.02 }} 
+                  transition={{ duration: 0.15 }}
                   style={{ 
                     padding: '16px 8px', 
                     backgroundColor: 'var(--surface-raised)', 
@@ -185,9 +151,15 @@ export const Progress = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     minHeight: '140px',
-                    boxShadow: ach.unlocked ? '0 4px 12px rgba(31, 122, 108, 0.1)' : 'none'
+                    boxShadow: ach.unlocked ? '0 4px 12px rgba(31, 122, 108, 0.1)' : 'none',
+                    position: 'relative'
                   }}
                 >
+                  {!ach.unlocked && (
+                    <div style={{ position: 'absolute', top: 8, right: 8, opacity: 0.3 }}>
+                      <Lock size={14} color="var(--ink-tertiary)" />
+                    </div>
+                  )}
                   <div style={{ 
                     width: 46, 
                     height: 46, 
@@ -231,14 +203,14 @@ export const Progress = () => {
                       {ach.unlocked ? ach.reward : ach.task}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* Interactive Session History */}
-        <div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', marginTop: '16px' }}>
             <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', margin: 0 }}>
               Session History
@@ -257,8 +229,11 @@ export const Progress = () => {
                   title={session.topic}
                   subtitle={formatTime(session.timestamp)}
                   trailingMetadata={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--grove-moss)' }}>{session.score}/100</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--surface-sunken)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: `${session.score}%`, height: '100%', backgroundColor: 'var(--grove-moss)', borderRadius: '2px' }} />
+                      </div>
+                      <span style={{ fontWeight: 700, color: 'var(--grove-moss)', fontSize: '14px' }}>{session.score}</span>
                       <ChevronRight size={16} color="var(--ink-secondary)" />
                     </div>
                   }
@@ -267,15 +242,20 @@ export const Progress = () => {
                 />
               ))
             ) : (
-              <Card 
-                size="compact"
-                title="First Speaking Session"
-                subtitle="Complete your practice to unlock achievements!"
-                trailingMetadata="0/100"
-              />
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px 24px', 
+                backgroundColor: 'var(--surface-raised)', 
+                borderRadius: 'var(--radius-lg)',
+                border: '1px dashed var(--border-hairline)'
+              }}>
+                <Mic size={32} color="var(--ink-tertiary)" style={{ marginBottom: '12px' }} />
+                <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink-primary)', marginBottom: '4px' }}>No sessions yet</div>
+                <div style={{ fontSize: '14px', color: 'var(--ink-secondary)' }}>Complete your first practice to see your progress here!</div>
+              </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Historical Session Review Modal / Bottom Sheet */}
@@ -316,6 +296,7 @@ export const Progress = () => {
                 gap: '14px'
               }}
             >
+              <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border-hairline)', borderRadius: '2px', margin: '0 auto 12px' }} />
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
@@ -381,48 +362,44 @@ export const Progress = () => {
                 </div>
               </div>
 
-              {/* Speaking Pace & Filler Word Metrics Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div style={{ backgroundColor: 'rgba(31, 122, 108, 0.08)', padding: '10px 12px', borderRadius: '12px', border: '1px solid rgba(31, 122, 108, 0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Zap size={16} color="var(--grove-moss)" />
-                  <div>
-                    <div style={{ fontSize: '11px', color: 'var(--ink-secondary)', fontWeight: 500 }}>Speaking Pace</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-base)' }}>
-                      {selectedSession.wpm || 130} WPM <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--grove-moss)' }}>({selectedSession.pacingNote || 'Optimal'})</span>
+              {/* Key Takeaways in Points */}
+              {(() => {
+                const session = selectedSession as any;
+                const points: string[] = session?.keyPoints && Array.isArray(session.keyPoints) && session.keyPoints.length > 0
+                  ? session.keyPoints
+                  : (session?.feedback
+                      ? session.feedback.split(/(?<=[.!?])\s+/).map((s: string) => s.trim()).filter((s: string) => s.length > 4)
+                      : ["Solid practice session with clear communicative flow.", "Focus on preposition accuracy and seamless clause connection."]);
+
+                return (
+                  <div style={{ backgroundColor: 'var(--surface-raised)', padding: '14px 16px', borderRadius: '16px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Key Takeaways
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {points.map((pt: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: 'var(--grove-moss)', marginTop: '6px', flexShrink: 0 }} />
+                          <span style={{ fontSize: '13.5px', color: 'var(--ink-base)', lineHeight: 1.45 }}>{pt}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                );
+              })()}
 
-                <div style={{ backgroundColor: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Mic size={16} color="var(--ink-secondary)" />
+              {/* Next Question / Follow-Up */}
+              {(selectedSession.followUpQuestion || selectedSession.reply) && (
+                <div style={{ backgroundColor: 'rgba(31, 122, 108, 0.08)', padding: '12px 14px', borderRadius: '14px', border: '1px solid rgba(31, 122, 108, 0.2)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <MessageCircle size={16} color="var(--grove-moss)" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--ink-secondary)', fontWeight: 500 }}>Filler Words</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-base)' }}>
-                      {selectedSession.fillerWords?.length ? `${selectedSession.fillerWords.length} detected` : '0 Clean flow'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Coach Conversational Reply & Follow-Up */}
-              {selectedSession.reply && (
-                <div style={{ backgroundColor: 'var(--surface-raised)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <MessageCircle size={18} color="var(--grove-moss)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', marginBottom: '2px' }}>Coach Response & Follow-up</div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', marginBottom: '2px' }}>Next Question to Practice</div>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
-                      {selectedSession.reply}
+                      {selectedSession.followUpQuestion || selectedSession.reply}
                     </p>
                   </div>
                 </div>
               )}
-
-              {/* Assessment Feedback */}
-              <div style={{ backgroundColor: 'var(--surface-raised)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                <p style={{ margin: 0, fontSize: '14px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
-                  {selectedSession.feedback || "Good practice session! Continue practicing regularly to strengthen your fluency, natural pauses, and vocabulary."}
-                </p>
-              </div>
 
               {/* Concrete Specific Corrections & Upgrades */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

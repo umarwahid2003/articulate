@@ -67,8 +67,14 @@
 
 .grove-card--standard .grove-card__media,
 .grove-card--feature .grove-card__media {
-  margin-right: 0;
-  margin-bottom: var(--spacing-16);
+  margin-right: var(--spacing-16);
+  margin-bottom: 0;
+}
+
+.grove-card--standard:has(.grove-card__media),
+.grove-card--feature:has(.grove-card__media) {
+  flex-direction: row;
+  align-items: center;
 }
 
 .grove-card__content {
