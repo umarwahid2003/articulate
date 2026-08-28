@@ -60,15 +60,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         height: '100vh', 
         width: '100vw', 
         display: 'flex', 
+        flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center', 
         backgroundColor: 'var(--surface-base)', 
-        color: 'var(--grove-moss)', 
-        fontFamily: 'var(--font-display)', 
-        fontSize: '18px',
-        fontWeight: 600
+        gap: '16px'
       }}>
-        Articulate...
+        <div style={{
+          color: 'var(--grove-moss)', 
+          fontFamily: 'var(--font-display)', 
+          fontSize: '24px',
+          fontWeight: 600,
+          letterSpacing: '-0.02em',
+          animation: 'animate-pulse 2s ease-in-out infinite'
+        }}>
+          Articulate
+        </div>
+        <div style={{
+          width: '32px',
+          height: '3px',
+          borderRadius: '2px',
+          backgroundColor: 'var(--grove-moss)',
+          opacity: 0.3,
+          animation: 'animate-pulse 2s ease-in-out infinite'
+        }} />
       </div>
     );
   }

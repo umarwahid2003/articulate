@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Target, BarChart2, Compass, User, Mail, Edit3 } from 'lucide-react';
 import { UserContext } from '../types/user';
 import { Button } from '../components/Button';
+import { motion } from 'framer-motion';
 
 export function AccountDetails() {
   const navigate = useNavigate();
@@ -45,7 +46,12 @@ export function AccountDetails() {
       <div style={{ padding: '24px', paddingBottom: '140px', display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '8px' }}>
         
         {/* Profile Identity Card */}
-        <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
           <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
             Personal Information
           </h3>
@@ -71,10 +77,15 @@ export function AccountDetails() {
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink-base)' }}>{email}</div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Speaking Preferences & Goal Section */}
-        <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.08 }}
+          style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--grove-moss)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Speaking Profile
@@ -155,10 +166,14 @@ export function AccountDetails() {
             </div>
           </div>
 
-        </div>
+        </motion.div>
 
         {/* Action Button */}
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.16 }}
+        >
           <Button
             variant="secondary"
             onClick={() => navigate('/onboarding')}
@@ -166,7 +181,7 @@ export function AccountDetails() {
           >
             Update Goals & Preferences
           </Button>
-        </div>
+        </motion.div>
 
       </div>
     </Layout>

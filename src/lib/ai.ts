@@ -5,32 +5,137 @@ export interface Message {
   content: string;
 }
 
-const DEFAULT_TOPICS: TopicSuggestion[] = [
-  {
-    id: 'topic-1',
-    title: 'Introduce Yourself & Ambitions',
-    description: 'Share your background, current focus, and what you hope to achieve next.',
-    category: 'Career & Ambition',
-    starterPrompt: 'Hi there! Tell me a bit about yourself, what you are working on, and where you want to be in the next few years.',
-    emoji: '💼'
-  },
-  {
-    id: 'topic-2',
-    title: 'How AI is Changing the World',
-    description: 'Discuss how artificial intelligence is transforming daily life and work.',
-    category: 'Tech & Trends',
-    starterPrompt: 'How do you think AI and modern technology will impact your daily work and future career?',
-    emoji: '🤖'
-  },
-  {
-    id: 'topic-3',
-    title: 'A Memorable Life Experience',
-    description: 'Talk about a challenge you overcame or a trip that broadened your perspective.',
-    category: 'Life & Stories',
-    starterPrompt: 'Could you share an unforgettable experience or challenge that taught you something valuable?',
-    emoji: '🌱'
+const GROQ_CHAT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
+const GEMINI_CHAT_MODELS = ['gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-flash-latest'];
+
+const CONTEXT_FALLBACK_TOPICS: Record<string, TopicSuggestion[]> = {
+  interview: [
+    {
+      id: 'int-1',
+      title: 'Handling Unexpected Pressure',
+      description: 'Describe a high-stakes moment at work where priorities shifted rapidly.',
+      category: 'Job Interviews',
+      starterPrompt: 'Tell me about a time when you had to manage unexpected workplace pressure or tight deadlines. How did you adapt your strategy?',
+      emoji: '💼'
+    },
+    {
+      id: 'int-2',
+      title: 'Navigating Team Conflict',
+      description: 'Explain your approach to resolving disagreements with colleagues professionally.',
+      category: 'Job Interviews',
+      starterPrompt: 'Could you share an example of a disagreement with a team member or manager, and how you worked together toward a constructive resolution?',
+      emoji: '🤝'
+    },
+    {
+      id: 'int-3',
+      title: 'Architecting a Complex Solution',
+      description: 'Explain a technical or operational challenge you designed a solution for.',
+      category: 'Technical & Career',
+      starterPrompt: 'Walk me through a project or technical achievement where you took the lead from problem definition to execution.',
+      emoji: '🚀'
+    },
+    {
+      id: 'int-4',
+      title: 'Your 5-Year Impact Vision',
+      description: 'Articulate your trajectory, ambition, and industry perspective.',
+      category: 'Career Vision',
+      starterPrompt: 'Where do you see your industry evolving over the next few years, and what role do you plan to play in shaping it?',
+      emoji: '🎯'
+    }
+  ],
+  tech: [
+    {
+      id: 'tech-1',
+      title: 'Generative AI in Daily Workflows',
+      description: 'Analyze the balance between AI automation and human creativity.',
+      category: 'Tech & AI',
+      starterPrompt: 'How has generative AI changed the way you solve problems or learn new skills in your daily life?',
+      emoji: '🤖'
+    },
+    {
+      id: 'tech-2',
+      title: 'The Future of Autonomous Agents',
+      description: 'Debate how autonomous agents will interact with human teams.',
+      category: 'Tech & AI',
+      starterPrompt: 'If autonomous software agents could handle 50% of routine knowledge work, what new skills should professionals focus on developing?',
+      emoji: '⚡'
+    },
+    {
+      id: 'tech-3',
+      title: 'Privacy in an Hyper-Connected Era',
+      description: 'Discuss data ethics, privacy trade-offs, and emerging tech standards.',
+      category: 'Tech & Society',
+      starterPrompt: 'What do you think is the biggest ethical challenge facing the tech industry today, and how should we address it?',
+      emoji: '🔒'
+    }
+  ],
+  startups: [
+    {
+      id: 'startup-1',
+      title: 'Finding Product-Market Fit',
+      description: 'Discuss the crucial indicators that a product truly solves a market need.',
+      category: 'Startups & Business',
+      starterPrompt: 'In your view, what is the most common mistake early-stage startups make when trying to find product-market fit?',
+      emoji: '📈'
+    },
+    {
+      id: 'startup-2',
+      title: 'Disrupting Traditional Markets',
+      description: 'Examine a legacy industry that is ripe for disruption.',
+      category: 'Business Strategy',
+      starterPrompt: 'If you had the resources to build any startup tomorrow, which industry would you disrupt first and why?',
+      emoji: '💡'
+    }
+  ],
+  casual: [
+    {
+      id: 'cas-1',
+      title: 'A Perspective-Shifting Habit',
+      description: 'Reflect on a daily ritual that significantly improves your focus or mindset.',
+      category: 'Daily Life',
+      starterPrompt: 'What is one micro-habit or routine you adopted that has had a surprisingly large positive impact on your life?',
+      emoji: '☕'
+    },
+    {
+      id: 'cas-2',
+      title: 'A Story Behind a Favorite Book/Movie',
+      description: 'Share a narrative that changed the way you think about people or society.',
+      category: 'Culture & Stories',
+      starterPrompt: 'What is a book, film, or piece of art that genuinely altered your perspective on something important?',
+      emoji: '🎬'
+    },
+    {
+      id: 'cas-3',
+      title: 'Travel Moments of Wonder',
+      description: 'Describe an encounter or landscape that took your breath away.',
+      category: 'Travel & Culture',
+      starterPrompt: 'Can you describe a place you visited or an encounter while traveling that completely surprised your expectations?',
+      emoji: '🌍'
+    }
+  ]
+};
+
+function getFallbackTopicList(userContext?: UserContext | null): TopicSuggestion[] {
+  const ctx = userContext || getUserContext();
+  const goalLower = (ctx?.goal || '').toLowerCase();
+  const interests = (ctx?.interests || []).map(i => i.toLowerCase());
+
+  const pool: TopicSuggestion[] = [];
+  if (goalLower.includes('interview') || goalLower.includes('career')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.interview);
   }
-];
+  if (interests.some(i => i.includes('tech') || i.includes('ai'))) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.tech);
+  }
+  if (interests.some(i => i.includes('startup') || i.includes('business'))) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.startups);
+  }
+  pool.push(...CONTEXT_FALLBACK_TOPICS.casual);
+
+  // Shuffle the pool
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5);
+}
 
 export function getUserContext(): UserContext | null {
   try {
@@ -117,97 +222,130 @@ export async function transcribeAudioWithWhisper(audioBlob: Blob): Promise<strin
 }
 
 /**
- * Generate 3 personalized speaking topics using Groq (Llama 3.3 70B) or Gemini
+ * Generate 5 novel, highly personalized speaking topics tailored directly to the user's context
  */
 export async function generatePersonalizedTopics(
-  userContext?: UserContext | null
+  userContext?: UserContext | null,
+  excludeTitles: string[] = []
 ): Promise<TopicSuggestion[]> {
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-  if (!groqKey && !geminiKey) {
-    return DEFAULT_TOPICS;
-  }
-
   const ctx = userContext || getUserContext();
   const goal = ctx?.goal || 'Job Interviews & Career';
   const level = ctx?.level || 'Intermediate';
-  const interests = ctx?.interests?.join(', ') || 'Technology, Startups, Daily Life';
+  const interests = (ctx?.interests && ctx.interests.length > 0) ? ctx.interests.join(', ') : 'Technology, Business & Startups, Daily Life';
   const tone = ctx?.speakingTone || 'Professional & Articulate';
 
-  const prompt = `You are Articulate, a warm, elite English speaking mentor.
-Generate 3 distinct, stimulating speaking topics specifically for a student practicing English:
-- Speaking Goal: "${goal}"
-- Current Proficiency Level: "${level}"
-- Personal Interests: "${interests}"
-- Desired Speaking Tone: "${tone}"
+  const excludeClause = excludeTitles.length > 0
+    ? `IMPORTANT: Do NOT generate any of these already seen topics: ${JSON.stringify(excludeTitles)}.`
+    : '';
 
-Return STRICTLY a JSON object with a "topics" array containing 3 objects with this exact structure:
+  const prompt = `You are Articulate, an elite, creative English speaking coach.
+Generate 5 completely fresh, highly stimulating, and diverse speaking topics specifically customized for this student:
+- Main Speaking Goal: "${goal}"
+- English Proficiency Level: "${level}"
+- Passions & Interests: "${interests}"
+- Desired Speaking Style: "${tone}"
+- Randomization seed: ${Date.now()}-${Math.floor(Math.random() * 10000)}
+${excludeClause}
+
+GUIDELINES FOR INTRIGUING TOPICS:
+1. Make them provocative, conversational, and directly applicable to their goal ("${goal}").
+2. Include varied formats: an interview behavioral scenario, a future trend prediction, a critical decision dilemma, a startup pitch simulation, and a philosophical reflection.
+3. The "starterPrompt" MUST sound like a warm, supportive human coach asking an insightful question that invites an extended, fluent response.
+
+Return STRICTLY a JSON object matching this schema:
 {
   "topics": [
     {
-      "id": "topic-1",
-      "title": "Short punchy topic title (max 5 words)",
-      "description": "1 clear sentence explaining what to discuss",
-      "category": "1-2 word category (e.g. Job Interview, Tech & AI, Daily Life)",
-      "starterPrompt": "A natural, open-ended question the AI coach asks to start the conversation",
-      "emoji": "Relevant emoji"
+      "id": "topic-unique-${Date.now()}-1",
+      "title": "Concise Engaging Title (max 5 words)",
+      "description": "1 engaging sentence describing the focus of the speaking topic",
+      "category": "Category tag matching their interest or goal",
+      "starterPrompt": "A warm, natural question from the AI mentor to begin speaking",
+      "emoji": "Relevant icon emoji"
     }
   ]
 }`;
 
-  try {
-    if (groqKey) {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' },
-          temperature: 0.7
-        })
-      });
+  // 1. Try Groq with working chat models
+  if (groqKey) {
+    for (const model of GROQ_CHAT_MODELS) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+            temperature: 0.95
+          })
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        const content = JSON.parse(data.choices[0].message.content);
-        const list = Array.isArray(content) ? content : content.topics || content.items;
-        if (Array.isArray(list) && list.length > 0) {
-          return list;
+        if (response.ok) {
+          const data = await response.json();
+          const raw = JSON.parse(data.choices[0].message.content);
+          const list = Array.isArray(raw) ? raw : (raw.topics || raw.items || raw.suggestions);
+          if (Array.isArray(list) && list.length > 0) {
+            return list.map((item, idx) => ({
+              id: item.id || `gen-${Date.now()}-${idx}`,
+              title: item.title || `Speaking Topic ${idx + 1}`,
+              description: item.description || '',
+              category: item.category || 'Speaking Practice',
+              starterPrompt: item.starterPrompt || item.prompt || 'Share your thoughts on this topic.',
+              emoji: item.emoji || '🎙️'
+            }));
+          }
         }
+      } catch (groqErr) {
+        console.warn(`Groq model ${model} attempt failed:`, groqErr);
       }
     }
-
-    if (geminiKey) {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        const parsed = JSON.parse(text);
-        const list = Array.isArray(parsed) ? parsed : parsed.topics || parsed.items;
-        if (Array.isArray(list) && list.length > 0) {
-          return list;
-        }
-      }
-    }
-
-    return DEFAULT_TOPICS;
-  } catch (err) {
-    console.error("Error generating topics:", err);
-    return DEFAULT_TOPICS;
   }
+
+  // 2. Try Gemini with working models
+  if (geminiKey) {
+    for (const model of GEMINI_CHAT_MODELS) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.95 }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const raw = JSON.parse(text);
+            const list = Array.isArray(raw) ? raw : (raw.topics || raw.items || raw.suggestions);
+            if (Array.isArray(list) && list.length > 0) {
+              return list.map((item, idx) => ({
+                id: item.id || `gem-${Date.now()}-${idx}`,
+                title: item.title || `Speaking Topic ${idx + 1}`,
+                description: item.description || '',
+                category: item.category || 'Speaking Practice',
+                starterPrompt: item.starterPrompt || item.prompt || 'Share your thoughts on this topic.',
+                emoji: item.emoji || '🎙️'
+              }));
+            }
+          }
+        }
+      } catch (geminiErr) {
+        console.warn(`Gemini model ${model} attempt failed:`, geminiErr);
+      }
+    }
+  }
+
+  return getFallbackTopicList(ctx);
 }
 
 /**
@@ -228,7 +366,7 @@ export async function processSpeechWithAI(
   const ctx = getUserContext();
   const goal = ctx?.goal || 'General Speaking Fluency';
   const level = ctx?.level || 'Intermediate';
-  const interests = ctx?.interests?.join(', ') || 'General Knowledge';
+  const interests = (ctx?.interests && ctx.interests.length > 0) ? ctx.interests.join(', ') : 'General Knowledge';
   const feedbackStyle = ctx?.feedbackStyle || 'balanced';
   const tone = ctx?.speakingTone || 'Professional & Articulate';
 
@@ -240,7 +378,7 @@ export async function processSpeechWithAI(
 
   const topicContext = activeTopic ? `Current Session Topic: "${activeTopic.title}". Prompt was: "${activeTopic.starterPrompt}"` : 'Free speaking session.';
 
-  const systemPrompt = `You are Articulate, an elite, highly empathetic AI English speaking coach and conversational partner.
+  const systemPrompt = `You are Articulate, an elite, highly empathetic AI English speaking coach.
 ${topicContext}
 
 STUDENT PROFILE:
@@ -254,9 +392,11 @@ STUDENT SPOKE:
 "${transcribedText}"
 
 COACHING MANDATE:
-1. APPRECIATION & VALUE: Genuinely acknowledge the core idea they communicated and validate their point.
-2. CRITICAL LINGUISTIC UPGRADES: Identify awkward prepositions, grammatical tenses, sentence transitions, or word choices. Provide natural, native-level phrasing with clear rationales.
-3. CONVERSATIONAL REPLY & ACTIVE LISTENING: Reply naturally to what they actually said with warmth, and ask 1 engaging, insightful follow-up question to keep the conversation flowing.
+1. KEY TAKEAWAYS (IN POINTS): Provide exactly 2 short, crisp bullet points. No long paragraphs.
+   - Point 1: Validate communication clarity and strong expression.
+   - Point 2: Specific high-impact tip on phrasing, vocabulary, or grammar.
+2. LINGUISTIC PRECISION UPGRADES: Provide 1-2 native phrasing improvements with clear rationales.
+3. CONVERSATIONAL FOLLOW-UP: 1 natural, thought-provoking question to prompt the next practice thought.
 
 Respond STRICTLY in JSON format matching this schema:
 {
@@ -267,7 +407,10 @@ Respond STRICTLY in JSON format matching this schema:
     "vocabulary": 8,  // Integer 1-10 (word variety and contextual precision)
     "confidence": 8   // Integer 1-10 (assertiveness, direct expression)
   },
-  "feedback": "2 concise sentences: first validate what was expressed clearly, second provide the single most important linguistic upgrade.",
+  "keyPoints": [
+    "Short punchy strength or observation (max 15 words)",
+    "Short punchy actionable refinement tip (max 15 words)"
+  ],
   "corrections": [
     {
       "original": "Exact phrase from student's speech with mistake or clumsy wording",
@@ -275,7 +418,7 @@ Respond STRICTLY in JSON format matching this schema:
       "reason": "Clear linguistic explanation of why this upgrade sounds more natural"
     }
   ],
-  "reply": "A warm, natural 2-sentence conversational response answering their point and asking a thoughtful follow-up question."
+  "followUpQuestion": "A warm, engaging 1-sentence follow-up question to practice next."
 }`;
 
   const userMessage: Message = { role: 'user', content: transcribedText };
@@ -284,22 +427,82 @@ Respond STRICTLY in JSON format matching this schema:
   try {
     let evaluation: AISpeechEvaluation | null = null;
 
+    // 1. Try Groq models
     if (groqKey) {
+      for (const model of GROQ_CHAT_MODELS) {
+        try {
+          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${groqKey}`
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...currentHistory
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.35
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            evaluation = JSON.parse(data.choices[0].message.content);
+            if (evaluation && evaluation.overallScore) {
+              break;
+            }
+          }
+        } catch (groqErr) {
+          console.warn(`Groq evaluation with ${model} failed:`, groqErr);
+        }
+      }
+    }
+
+    // 2. Try Gemini models
+    if (!evaluation && geminiKey) {
+      for (const model of GEMINI_CHAT_MODELS) {
+        try {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+              generationConfig: { responseMimeType: 'application/json', temperature: 0.3 }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const contentText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (contentText) {
+              evaluation = JSON.parse(contentText);
+              if (evaluation && evaluation.overallScore) {
+                break;
+              }
+            }
+          }
+        } catch (geminiErr) {
+          console.warn(`Gemini evaluation with ${model} failed:`, geminiErr);
+        }
+      }
+    }
+
+    // 3. Try DeepSeek fallback
+    if (!evaluation && deepseekKey) {
       try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch('https://api.deepseek.com/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
+            'Authorization': `Bearer ${deepseekKey}`
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...currentHistory
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.35
+            model: 'deepseek-chat',
+            messages: [{ role: 'system', content: systemPrompt }, ...currentHistory],
+            response_format: { type: 'json_object' }
           })
         });
 
@@ -307,50 +510,37 @@ Respond STRICTLY in JSON format matching this schema:
           const data = await response.json();
           evaluation = JSON.parse(data.choices[0].message.content);
         }
-      } catch (groqErr) {
-        console.warn("Groq request fallback:", groqErr);
-      }
-    }
-
-    if (!evaluation && geminiKey) {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.3 }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const contentText = data.candidates[0].content.parts[0].text;
-        evaluation = JSON.parse(contentText);
-      }
-    }
-
-    if (!evaluation && deepseekKey) {
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepseekKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [{ role: 'system', content: systemPrompt }, ...currentHistory],
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        evaluation = JSON.parse(data.choices[0].message.content);
+      } catch (dsErr) {
+        console.warn("DeepSeek evaluation failed:", dsErr);
       }
     }
 
     if (!evaluation) {
       throw new Error("No AI response generated.");
+    }
+
+    // Ensure keyPoints are cleanly formatted points
+    if (!evaluation.keyPoints || !Array.isArray(evaluation.keyPoints) || evaluation.keyPoints.length === 0) {
+      if (evaluation.feedback) {
+        evaluation.keyPoints = evaluation.feedback
+          .split(/(?<=[.!?])\s+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 5);
+      } else {
+        evaluation.keyPoints = [
+          "Good communicative clarity and logical structure.",
+          "Continue refining natural transitions and preposition precision."
+        ];
+      }
+    }
+    if (!evaluation.feedback) {
+      evaluation.feedback = evaluation.keyPoints.join(' ');
+    }
+    if (!evaluation.followUpQuestion) {
+      evaluation.followUpQuestion = evaluation.reply || "What is your main takeaway from this experience?";
+    }
+    if (!evaluation.reply) {
+      evaluation.reply = evaluation.followUpQuestion;
     }
 
     // Attach calculated speaking metrics
@@ -369,7 +559,11 @@ Respond STRICTLY in JSON format matching this schema:
     const fallbackEval: AISpeechEvaluation = {
       overallScore: 78,
       scores: { fluency: 7, grammar: 7, vocabulary: 8, confidence: 8 },
-      feedback: "Great clarity and expression! Focus on polish and preposition accuracy to reach native fluency.",
+      keyPoints: [
+        "Clear expression and active communication intent.",
+        "Focus on preposition accuracy and seamless sentence transitions."
+      ],
+      feedback: "Clear expression and active communication intent. Focus on preposition accuracy and seamless sentence transitions.",
       corrections: [
         {
           original: transcribedText.length > 30 ? transcribedText.slice(0, 30) + '...' : transcribedText,
@@ -377,7 +571,8 @@ Respond STRICTLY in JSON format matching this schema:
           reason: "Focus on subject-verb agreement and professional phrasing."
         }
       ],
-      reply: "Thank you for sharing your thoughts! How did you first get interested in this area?",
+      followUpQuestion: "How did you first get interested in this area?",
+      reply: "How did you first get interested in this area?",
       wpm: metrics.wpm,
       fillerWords: metrics.fillerWords,
       pacingNote: metrics.pacingNote
@@ -389,3 +584,4 @@ Respond STRICTLY in JSON format matching this schema:
     };
   }
 }
+

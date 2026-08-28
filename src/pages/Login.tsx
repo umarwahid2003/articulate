@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/Button';
 import { Mascot } from '../components/Mascot';
+import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
 
 export function Login() {
@@ -29,11 +30,21 @@ export function Login() {
 
   return (
     <Layout className="page-with-bottom-nav" style={{ padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: '160px', backgroundImage: 'radial-gradient(circle at top, rgba(31, 122, 108, 0.15) 0%, transparent 60%)' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(20px)' }}>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }} 
+        animate={{ opacity: 1, scale: 1 }} 
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(20px)' }}
+      >
         <Mascot state="standing" size={180} />
-      </div>
+      </motion.div>
       
-      <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '32px', marginBottom: '48px' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+        style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '32px', marginBottom: '48px' }}
+      >
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '40px', marginBottom: '8px', color: 'var(--ink-base)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
             Welcome back
@@ -78,7 +89,7 @@ export function Login() {
         <div style={{ textAlign: 'center', fontSize: '15px', color: 'var(--ink-secondary)' }}>
           New here? <Link to="/signup" style={{ color: 'var(--grove-moss)', fontWeight: 600, textDecoration: 'none' }}>Create an account</Link>
         </div>
-      </div>
+      </motion.div>
     </Layout>
   );
 }
