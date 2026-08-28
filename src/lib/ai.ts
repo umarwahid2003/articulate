@@ -45,6 +45,57 @@ export function getUserContext(): UserContext | null {
 }
 
 /**
+ * Transcribe audio blob with Groq Whisper Large V3 Turbo (high precision, sub-300ms)
+ */
+export async function transcribeAudioWithWhisper(audioBlob: Blob): Promise<string | null> {
+  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (!groqKey) {
+    return null;
+  }
+
+  try {
+    const formData = new FormData();
+    const mimeType = audioBlob.type || 'audio/webm';
+    let filename = 'recording.webm';
+    if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+      filename = 'recording.m4a';
+    } else if (mimeType.includes('wav')) {
+      filename = 'recording.wav';
+    } else if (mimeType.includes('ogg')) {
+      filename = 'recording.ogg';
+    }
+
+    formData.append('file', audioBlob, filename);
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', 'en');
+    formData.append('response_format', 'json');
+    formData.append('temperature', '0.0');
+
+    const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      console.warn(`Groq Whisper error ${response.status}:`, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    if (data && typeof data.text === 'string' && data.text.trim()) {
+      return data.text.trim();
+    }
+    return null;
+  } catch (err) {
+    console.warn("Error transcribing with Groq Whisper:", err);
+    return null;
+  }
+}
+
+/**
  * Generate 3 personalized speaking topics using Groq (Llama 3.3 70B) or Gemini
  */
 export async function generatePersonalizedTopics(

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Mic, Square, Loader2, Volume2 } from 'lucide-react';
+import { Mic, Square, Loader2, Volume2, Sparkles } from 'lucide-react';
 import { Mascot } from './Mascot';
 import { SpeechRecognition as CapacitorSpeech } from '@capacitor-community/speech-recognition';
 import { Capacitor } from '@capacitor/core';
+import { transcribeAudioWithWhisper } from '../lib/ai';
 
 interface VoiceRecorderProps {
   onTranscriptionComplete?: (text: string) => void;
@@ -27,6 +28,7 @@ export const VoiceRecorder = ({
   activePrompt
 }: VoiceRecorderProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isWhisperTranscribing, setIsWhisperTranscribing] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [transcription, setTranscription] = useState<string>('');
@@ -36,6 +38,10 @@ export const VoiceRecorder = ({
   const transcriptScrollRef = useRef<HTMLDivElement>(null);
   const accumulatedFinalRef = useRef<string>('');
   const currentSessionFinalRef = useRef<string>('');
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     transcriptionRef.current = transcription;
@@ -74,6 +80,7 @@ export const VoiceRecorder = ({
   const stopRecording = useCallback(async () => {
     setIsRecording(false);
     
+    // 1. Stop Web Speech Recognition
     if (webRecognitionRef.current) {
       try {
         webRecognitionRef.current.stop();
@@ -91,12 +98,53 @@ export const VoiceRecorder = ({
       }
     }
 
-    const totalCommitted = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
-    const textToSend = (transcriptionRef.current || totalCommitted).trim();
+    // 2. Stop MediaRecorder and grab audio blob
+    let recordedBlob: Blob | null = null;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      await new Promise<void>((resolve) => {
+        if (!mediaRecorderRef.current) return resolve();
+        mediaRecorderRef.current.onstop = () => resolve();
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
 
-    if (onTranscriptionComplete && textToSend) {
-      onTranscriptionComplete(textToSend);
-    } else if (!textToSend) {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      mediaStreamRef.current = null;
+    }
+
+    if (audioChunksRef.current.length > 0) {
+      const mime = mediaRecorderRef.current?.mimeType || 'audio/webm';
+      recordedBlob = new Blob(audioChunksRef.current, { type: mime });
+    }
+
+    // 3. Compute fallback live transcript
+    const totalCommitted = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+    let finalText = (transcriptionRef.current || totalCommitted).trim();
+
+    // 4. Try Groq Whisper Large V3 Turbo for ultra-high accuracy
+    if (recordedBlob && recordedBlob.size > 1500) {
+      try {
+        setIsWhisperTranscribing(true);
+        const whisperText = await transcribeAudioWithWhisper(recordedBlob);
+        setIsWhisperTranscribing(false);
+        if (whisperText && whisperText.trim().length > 0) {
+          finalText = whisperText.trim();
+          setTranscription(finalText);
+        }
+      } catch (whisperErr) {
+        console.warn("Whisper fallback to Web Speech:", whisperErr);
+        setIsWhisperTranscribing(false);
+      }
+    }
+
+    if (onTranscriptionComplete && finalText) {
+      onTranscriptionComplete(finalText);
+    } else if (!finalText) {
       setError("Didn't catch any speech. Tap mic and try again.");
     }
   }, [onTranscriptionComplete]);
@@ -107,8 +155,37 @@ export const VoiceRecorder = ({
     transcriptionRef.current = '';
     accumulatedFinalRef.current = '';
     currentSessionFinalRef.current = '';
+    audioChunksRef.current = [];
     
     try {
+      // 1. Initialize Audio MediaRecorder for high-fidelity Groq Whisper transcription
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStreamRef.current = stream;
+
+          let mimeType = 'audio/webm;codecs=opus';
+          if (typeof MediaRecorder !== 'undefined') {
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+              if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+              else if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
+              else mimeType = '';
+            }
+            const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+            recorder.ondataavailable = (e) => {
+              if (e.data && e.data.size > 0) {
+                audioChunksRef.current.push(e.data);
+              }
+            };
+            recorder.start(250);
+            mediaRecorderRef.current = recorder;
+          }
+        } catch (mediaErr) {
+          console.warn("MediaRecorder init note:", mediaErr);
+        }
+      }
+
+      // 2. Initialize Real-Time Web Speech for live on-screen words
       if (Capacitor.isNativePlatform()) {
         const { speechRecognition } = await CapacitorSpeech.checkPermissions();
         if (speechRecognition !== 'granted') {
@@ -127,61 +204,56 @@ export const VoiceRecorder = ({
       } else {
         const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         
-        if (!SpeechRecognitionWeb) {
-          setError('Use Google Chrome, Edge, or Safari with microphone access.');
-          return;
+        if (SpeechRecognitionWeb) {
+          const recognition = new SpeechRecognitionWeb();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = (event: any) => {
+            let sessionFinal = '';
+            let interim = '';
+
+            for (let i = 0; i < event.results.length; i++) {
+              const result = event.results[i];
+              if (result.isFinal) {
+                sessionFinal += result[0].transcript + ' ';
+              } else {
+                interim += result[0].transcript;
+              }
+            }
+
+            currentSessionFinalRef.current = sessionFinal.trim();
+
+            const committed = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+            const totalDisplay = interim.trim() 
+              ? (committed ? `${committed} ${interim.trim()}` : interim.trim())
+              : committed;
+
+            setTranscription(totalDisplay);
+          };
+
+          recognition.onerror = (event: any) => {
+            if (event.error === 'not-allowed') {
+              setError('Microphone permission blocked in browser.');
+            }
+          };
+
+          recognition.onend = () => {
+            if (webRecognitionRef.current) {
+              if (currentSessionFinalRef.current) {
+                accumulatedFinalRef.current = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+                currentSessionFinalRef.current = '';
+              }
+              try {
+                recognition.start();
+              } catch (e) {}
+            }
+          };
+
+          recognition.start();
+          webRecognitionRef.current = recognition;
         }
-
-        const recognition = new SpeechRecognitionWeb();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onresult = (event: any) => {
-          let sessionFinal = '';
-          let interim = '';
-
-          // event.results already accumulates all results for the active session
-          for (let i = 0; i < event.results.length; i++) {
-            const result = event.results[i];
-            if (result.isFinal) {
-              sessionFinal += result[0].transcript + ' ';
-            } else {
-              interim += result[0].transcript;
-            }
-          }
-
-          currentSessionFinalRef.current = sessionFinal.trim();
-
-          const committed = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
-          const totalDisplay = interim.trim() 
-            ? (committed ? `${committed} ${interim.trim()}` : interim.trim())
-            : committed;
-
-          setTranscription(totalDisplay);
-        };
-
-        recognition.onerror = (event: any) => {
-          if (event.error === 'not-allowed') {
-            setError('Microphone permission blocked in browser.');
-          }
-        };
-
-        recognition.onend = () => {
-          if (webRecognitionRef.current) {
-            // Transfer finalized session results before starting a fresh session
-            if (currentSessionFinalRef.current) {
-              accumulatedFinalRef.current = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
-              currentSessionFinalRef.current = '';
-            }
-            try {
-              recognition.start();
-            } catch (e) {}
-          }
-        };
-
-        recognition.start();
-        webRecognitionRef.current = recognition;
       }
       
       setIsRecording(true);
@@ -193,7 +265,7 @@ export const VoiceRecorder = ({
   };
 
   const toggleRecording = () => {
-    if (isProcessing) return;
+    if (isProcessing || isWhisperTranscribing) return;
     if (isRecording) {
       stopRecording();
     } else {
@@ -217,7 +289,7 @@ export const VoiceRecorder = ({
 
   let mascotState: 'waiting' | 'listening' | 'thinking' = 'waiting';
   if (isRecording) mascotState = 'listening';
-  if (isProcessing) mascotState = 'thinking';
+  if (isProcessing || isWhisperTranscribing) mascotState = 'thinking';
 
   return (
     <div style={{ 
@@ -281,6 +353,11 @@ export const VoiceRecorder = ({
             <Volume2 size={16} className="animate-pulse" />
             <span style={{ fontSize: '14px', fontWeight: 600 }}>Listening... Speak naturally</span>
           </div>
+        ) : isWhisperTranscribing ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--grove-moss)', margin: 'auto 0' }}>
+            <Sparkles size={16} className="grove-spin" />
+            <span style={{ fontSize: '14px', fontWeight: 600 }}>Transcribing with Whisper Large V3...</span>
+          </div>
         ) : isProcessing ? (
           <span style={{ fontSize: '14px', color: 'var(--grove-moss)', fontWeight: 600, margin: 'auto 0' }}>
             Evaluating speech...
@@ -312,13 +389,13 @@ export const VoiceRecorder = ({
           display: 'flex',
           alignItems: 'center'
         }}>
-          {isRecording ? formatTime(elapsed) : isProcessing ? 'Thinking...' : 'Ready'}
+          {isRecording ? formatTime(elapsed) : (isProcessing || isWhisperTranscribing) ? 'Thinking...' : 'Ready'}
         </div>
 
         {/* Mic / Stop Button */}
         <button
           onClick={toggleRecording}
-          disabled={isProcessing}
+          disabled={isProcessing || isWhisperTranscribing}
           style={{ 
             width: '68px',
             height: '68px',
@@ -329,15 +406,15 @@ export const VoiceRecorder = ({
             backgroundColor: isRecording ? '#E53E3E' : 'var(--grove-moss)',
             color: '#ffffff',
             border: 'none',
-            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            cursor: (isProcessing || isWhisperTranscribing) ? 'not-allowed' : 'pointer',
             boxShadow: isRecording ? '0 0 24px rgba(229, 62, 62, 0.5)' : '0 8px 24px rgba(31, 122, 108, 0.3)',
             transition: 'all 0.2s ease',
-            opacity: isProcessing ? 0.6 : 1,
+            opacity: (isProcessing || isWhisperTranscribing) ? 0.6 : 1,
             flexShrink: 0
           }}
           aria-label={isRecording ? "Stop" : "Start"}
         >
-          {isProcessing ? (
+          {(isProcessing || isWhisperTranscribing) ? (
             <Loader2 size={26} className="grove-spin" />
           ) : isRecording ? (
             <Square size={22} fill="currentColor" />
