@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Mic, Square, Loader2, Volume2, Sparkles } from 'lucide-react';
+import { Mic, Square, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpeechRecognition as CapacitorSpeech } from '@capacitor-community/speech-recognition';
 import { Capacitor } from '@capacitor/core';
@@ -249,7 +249,7 @@ export const VoiceRecorder = ({
       setIsWhisperTranscribing(false);
       setTranscription('');
       transcriptionRef.current = '';
-      setError("Didn't detect any speech. Speak clearly into your mic and try again.");
+      setError("No speech detected. Try again.");
       return;
     }
 
@@ -399,6 +399,8 @@ export const VoiceRecorder = ({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const isBusy = isProcessing || isWhisperTranscribing;
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -410,7 +412,7 @@ export const VoiceRecorder = ({
       padding: '4px 16px 16px',
       boxSizing: 'border-box'
     }}>
-      {/* Central Interactive Voice Hub */}
+      {/* Central Voice Hub */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column',
@@ -420,20 +422,18 @@ export const VoiceRecorder = ({
         width: '100%',
         position: 'relative'
       }}>
-        {/* Live Timer & Waveform Display */}
+        {/* Status — timer when recording, nothing when idle */}
         <div style={{ 
-          height: '46px', 
+          height: '40px', 
           display: 'flex', 
-          flexDirection: 'column',
           alignItems: 'center', 
           justifyContent: 'center', 
-          gap: '6px',
           marginBottom: '16px'
         }}>
           {isRecording ? (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               style={{ display: 'flex', alignItems: 'center', gap: '14px' }}
             >
               {/* Left Waveform Bars */}
@@ -444,7 +444,7 @@ export const VoiceRecorder = ({
                     animate={{ height: Math.max(4, Math.round(lvl * 28)) }}
                     transition={{ type: 'spring', stiffness: 350, damping: 20 }}
                     style={{ 
-                      width: '3.5px', 
+                      width: '3px', 
                       borderRadius: '2px', 
                       backgroundColor: 'var(--error-brick)'
                     }} 
@@ -452,9 +452,9 @@ export const VoiceRecorder = ({
                 ))}
               </div>
 
-              {/* Stopwatch Counter */}
+              {/* Timer */}
               <div style={{ 
-                fontSize: '26px', 
+                fontSize: '24px', 
                 fontWeight: 700, 
                 fontFamily: 'var(--font-mono)', 
                 color: 'var(--error-brick)',
@@ -471,7 +471,7 @@ export const VoiceRecorder = ({
                     animate={{ height: Math.max(4, Math.round(lvl * 28)) }}
                     transition={{ type: 'spring', stiffness: 350, damping: 20 }}
                     style={{ 
-                      width: '3.5px', 
+                      width: '3px', 
                       borderRadius: '2px', 
                       backgroundColor: 'var(--error-brick)'
                     }} 
@@ -479,7 +479,7 @@ export const VoiceRecorder = ({
                 ))}
               </div>
             </motion.div>
-          ) : (
+          ) : isBusy ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -487,39 +487,30 @@ export const VoiceRecorder = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                fontSize: '11.5px', 
-                fontWeight: 700, 
-                color: 'var(--ink-secondary)',
-                letterSpacing: '0.07em',
-                textTransform: 'uppercase',
-                fontFamily: 'var(--font-display)'
+                fontSize: '13px', 
+                color: 'var(--grove-moss)',
+                fontFamily: 'var(--font-body)'
               }}
             >
-              {(isProcessing || isWhisperTranscribing) ? (
-                <>
-                  <Loader2 size={12} className="grove-spin" color="var(--grove-moss)" />
-                  <span style={{ color: 'var(--grove-moss)' }}>Analyzing Speech</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--grove-moss)' }} />
-                  <span>Ready to Listen</span>
-                </>
-              )}
+              <Loader2 size={13} className="grove-spin" />
+              <span>Analyzing...</span>
             </motion.div>
-          )}
+          ) : null}
         </div>
 
-        {/* Primary Interactive Recording Button with Ambient Halo */}
+        {/* Mic Button with single breathing halo */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Outer Ambient Ripple (Framer Motion) */}
+          {/* Single ambient halo */}
           <motion.div 
             animate={isRecording ? {
-              scale: [1, 1.28, 1],
-              opacity: [0.45, 0.1, 0.45]
+              scale: [1, 1.2, 1],
+              opacity: [0.4, 0.1, 0.4]
+            } : isBusy ? {
+              scale: 1,
+              opacity: 0.15
             } : {
-              scale: [1, 1.08, 1],
-              opacity: [0.2, 0.5, 0.2]
+              scale: [1, 1.06, 1],
+              opacity: [0.15, 0.35, 0.15]
             }}
             transition={{
               repeat: Infinity,
@@ -528,59 +519,22 @@ export const VoiceRecorder = ({
             }}
             style={{
               position: 'absolute',
-              width: '144px',
-              height: '144px',
+              width: '140px',
+              height: '140px',
               borderRadius: '50%',
-              backgroundColor: isRecording ? 'rgba(178, 74, 60, 0.15)' : (isProcessing || isWhisperTranscribing) ? 'rgba(47, 75, 60, 0.12)' : 'rgba(47, 75, 60, 0.08)',
-              border: isRecording ? '1.5px solid rgba(178, 74, 60, 0.3)' : (isProcessing || isWhisperTranscribing) ? '2px dashed var(--grove-moss)' : '1px solid var(--border-subtle)',
+              backgroundColor: isRecording ? 'rgba(178, 74, 60, 0.12)' : 'rgba(47, 75, 60, 0.06)',
               pointerEvents: 'none'
             }}
           />
 
-          {/* Secondary Harmonic Ripple during active recording */}
-          {isRecording && (
-            <motion.div 
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.3, 0.02, 0.3]
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 2.2,
-                ease: "easeOut"
-              }}
-              style={{
-                position: 'absolute',
-                width: '144px',
-                height: '144px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(178, 74, 60, 0.08)',
-                pointerEvents: 'none'
-              }}
-            />
-          )}
-
-          {/* Core Tactile Touch Button */}
+          {/* Mic button */}
           <motion.button
             onClick={toggleRecording}
-            disabled={isProcessing || isWhisperTranscribing}
-            whileHover={{ scale: 1.04 }}
+            disabled={isBusy}
             whileTap={{ scale: 0.94 }}
-            animate={!isRecording && !isProcessing && !isWhisperTranscribing ? {
-              boxShadow: [
-                '0 12px 32px rgba(47, 75, 60, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
-                '0 14px 38px rgba(47, 75, 60, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                '0 12px 32px rgba(47, 75, 60, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25)'
-              ]
-            } : {}}
-            transition={{
-              repeat: Infinity,
-              duration: 3.2,
-              ease: "easeInOut"
-            }}
             style={{ 
-              width: '100px',
-              height: '100px',
+              width: '96px',
+              height: '96px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -588,80 +542,73 @@ export const VoiceRecorder = ({
               backgroundColor: isRecording ? 'var(--error-brick)' : 'var(--grove-moss)',
               color: '#ffffff',
               border: 'none',
-              cursor: (isProcessing || isWhisperTranscribing) ? 'not-allowed' : 'pointer',
+              cursor: isBusy ? 'not-allowed' : 'pointer',
               boxShadow: isRecording 
-                ? '0 0 36px rgba(178, 74, 60, 0.55), 0 8px 24px rgba(178, 74, 60, 0.35)' 
-                : '0 12px 32px rgba(47, 75, 60, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
-              transition: 'background-color 0.25s ease',
+                ? '0 0 28px rgba(178, 74, 60, 0.4)' 
+                : '0 8px 24px rgba(47, 75, 60, 0.2)',
+              transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
               outline: 'none',
               zIndex: 2,
               position: 'relative'
             }}
             aria-label={isRecording ? "Stop Recording" : "Start Recording"}
           >
-            {(isProcessing || isWhisperTranscribing) ? (
-              <Loader2 size={36} className="grove-spin" color="#ffffff" />
+            {isBusy ? (
+              <Loader2 size={34} className="grove-spin" color="#ffffff" />
             ) : isRecording ? (
-              <Square size={28} fill="#ffffff" color="#ffffff" />
+              <Square size={26} fill="#ffffff" color="#ffffff" />
             ) : (
-              <Mic size={38} color="#ffffff" strokeWidth={2.2} />
+              <Mic size={36} color="#ffffff" strokeWidth={2} />
             )}
           </motion.button>
         </div>
 
-        {/* Action Caption / Guidance */}
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        {/* Caption */}
+        <div style={{ marginTop: '18px', textAlign: 'center' }}>
           {isRecording ? (
-            <motion.div 
-              initial={{ opacity: 0, y: 6 }} 
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: 'rgba(178, 74, 60, 0.09)',
-                padding: '4px 12px',
-                borderRadius: '100px'
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ 
+                fontSize: '14px', 
+                color: 'var(--error-brick)', 
+                fontWeight: 500,
+                fontFamily: 'var(--font-body)'
               }}
             >
-              <span style={{ width: '7px', height: '7px', borderRadius: '4px', backgroundColor: 'var(--error-brick)', display: 'inline-block' }} className="animate-pulse" />
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 600, color: 'var(--error-brick)' }}>
-                Recording Active · Tap when done
-              </span>
-            </motion.div>
-          ) : (isProcessing || isWhisperTranscribing) ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontSize: '14px', fontWeight: 500, color: 'var(--grove-moss)', fontFamily: 'var(--font-display)' }}>
-              Analyzing speech clarity & grammar...
-            </motion.div>
-          ) : (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 600, color: 'var(--ink-base)' }}>
-                Tap to Speak
-              </span>
-              <span style={{ fontSize: '13px', color: 'var(--ink-secondary)', marginTop: '2px' }}>
-                Express your thoughts naturally in English
-              </span>
-            </motion.div>
-          )}
+              Tap to stop
+            </motion.span>
+          ) : !isBusy ? (
+            <motion.span 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              style={{ 
+                fontSize: '15px', 
+                color: 'var(--ink-secondary)',
+                fontFamily: 'var(--font-body)'
+              }}
+            >
+              Tap to speak
+            </motion.span>
+          ) : null}
         </div>
       </div>
 
-      {/* Dynamic Speech Transcription / Prompt Card */}
+      {/* Transcript / Prompt area */}
       <motion.div 
         ref={transcriptScrollRef}
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.1 }}
+        transition={{ duration: 0.3 }}
         style={{ 
           width: '100%', 
           maxWidth: '420px',
-          minHeight: '88px',
-          maxHeight: '120px',
-          padding: '14px 18px', 
-          borderRadius: '22px',
-          backgroundColor: isRecording ? 'rgba(31, 122, 108, 0.05)' : 'var(--surface-raised)',
-          border: isRecording ? '1.5px solid var(--grove-moss)' : '1px solid var(--border-subtle)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+          minHeight: '80px',
+          maxHeight: '110px',
+          padding: '14px 16px', 
+          borderRadius: '16px',
+          backgroundColor: 'var(--surface-raised)',
+          border: '1px solid var(--border-subtle)',
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'flex-start', 
@@ -669,49 +616,26 @@ export const VoiceRecorder = ({
           overflowY: 'auto',
           flexShrink: 0,
           boxSizing: 'border-box',
-          WebkitOverflowScrolling: 'touch',
-          transition: 'all 0.25s ease'
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         {error ? (
-          <span style={{ color: 'var(--error-brick)', fontSize: '13.5px', fontWeight: 500, margin: 'auto 0' }}>{error}</span>
+          <span style={{ color: 'var(--error-brick)', fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', margin: 'auto 0' }}>{error}</span>
         ) : transcription ? (
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--grove-moss)', fontFamily: 'var(--font-display)' }}>
-                Live Spoken Stream
-              </span>
-              <Volume2 size={13} color="var(--grove-moss)" className="animate-pulse" />
-            </div>
-            <p style={{ fontSize: '14.5px', color: 'var(--ink-base)', margin: 0, lineHeight: 1.5, fontStyle: 'italic', wordBreak: 'break-word', textAlign: 'left' }}>
-              "{transcription}"
-            </p>
-          </div>
+          <p style={{ fontSize: '14px', color: 'var(--ink-base)', margin: 0, lineHeight: 1.55, fontFamily: 'var(--font-body)', fontStyle: 'italic', wordBreak: 'break-word', textAlign: 'left' }}>
+            "{transcription}"
+          </p>
         ) : isRecording ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--grove-moss)', margin: 'auto 0' }}>
-            <Volume2 size={18} className="animate-pulse" />
-            <span style={{ fontSize: '14.5px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>Listening to your voice...</span>
-          </div>
-        ) : isWhisperTranscribing ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--grove-moss)', margin: 'auto 0' }}>
-            <Sparkles size={16} className="grove-spin" />
-            <span style={{ fontSize: '14px', fontWeight: 600 }}>Transcribing with Whisper AI...</span>
-          </div>
-        ) : isProcessing ? (
-          <span style={{ fontSize: '14px', color: 'var(--grove-moss)', fontWeight: 600, margin: 'auto 0' }}>
-            Evaluating pronunciation, grammar & flow...
+          <span style={{ fontSize: '14px', color: 'var(--ink-secondary)', fontFamily: 'var(--font-body)', margin: 'auto 0' }}>
+            Listening...
+          </span>
+        ) : isBusy ? (
+          <span style={{ fontSize: '14px', color: 'var(--grove-moss)', fontFamily: 'var(--font-body)', margin: 'auto 0' }}>
+            Analyzing...
           </span>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', textAlign: 'left', width: '100%', margin: 'auto 0' }}>
-            <Sparkles size={16} color="var(--grove-moss)" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--grove-moss)', marginBottom: '3px', fontFamily: 'var(--font-display)' }}>
-                {activePrompt ? 'Speaking Prompt' : 'Free Speaking Mode'}
-              </div>
-              <div style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '14.5px', color: 'var(--ink-base)', lineHeight: 1.45 }}>
-                {activePrompt ? `"${activePrompt}"` : "Share a thought, describe your day, or explain an idea freely."}
-              </div>
-            </div>
+          <div style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '14px', color: 'var(--ink-secondary)', lineHeight: 1.5, margin: 'auto 0' }}>
+            {activePrompt ? `"${activePrompt}"` : "Say anything that comes to mind."}
           </div>
         )}
       </motion.div>
