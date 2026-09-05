@@ -149,6 +149,43 @@ export function getUserContext(): UserContext | null {
   return null;
 }
 
+export function safeParseJson<T = any>(raw: string | undefined | null): T | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const cleaned = trimmed.replace(/```(?:json)?\s*([\s\S]*?)\s*```/gi, '$1').trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      const startObj = cleaned.indexOf('{');
+      const endObj = cleaned.lastIndexOf('}');
+      if (startObj !== -1 && endObj > startObj) {
+        try {
+          return JSON.parse(cleaned.substring(startObj, endObj + 1));
+        } catch {}
+      }
+      const startArr = cleaned.indexOf('[');
+      const endArr = cleaned.lastIndexOf(']');
+      if (startArr !== -1 && endArr > startArr) {
+        try {
+          return JSON.parse(cleaned.substring(startArr, endArr + 1));
+        } catch {}
+      }
+      return null;
+    }
+  }
+}
+
+export function sanitizePromptText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/`/g, "'")
+    .trim();
+}
+
 /**
  * Calculate speaking rate (Words Per Minute) and detect filler words
  */
@@ -289,8 +326,8 @@ Return STRICTLY a JSON object matching this schema:
 
         if (response.ok) {
           const data = await response.json();
-          const raw = JSON.parse(data.choices[0].message.content);
-          const list = Array.isArray(raw) ? raw : (raw.topics || raw.items || raw.suggestions);
+          const raw = safeParseJson<any>(data.choices?.[0]?.message?.content);
+          const list = Array.isArray(raw) ? raw : (raw?.topics || raw?.items || raw?.suggestions);
           if (Array.isArray(list) && list.length > 0) {
             return list.map((item, idx) => ({
               id: item.id || `gen-${Date.now()}-${idx}`,
@@ -325,8 +362,8 @@ Return STRICTLY a JSON object matching this schema:
           const data = await response.json();
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) {
-            const raw = JSON.parse(text);
-            const list = Array.isArray(raw) ? raw : (raw.topics || raw.items || raw.suggestions);
+            const raw = safeParseJson<any>(text);
+            const list = Array.isArray(raw) ? raw : (raw?.topics || raw?.items || raw?.suggestions);
             if (Array.isArray(list) && list.length > 0) {
               return list.map((item, idx) => ({
                 id: item.id || `gem-${Date.now()}-${idx}`,
@@ -361,14 +398,15 @@ export async function processSpeechWithAI(
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
 
-  const metrics = calculateSpeakingMetrics(transcribedText, durationSeconds);
+  const cleanTranscript = sanitizePromptText(transcribedText);
+  const metrics = calculateSpeakingMetrics(cleanTranscript, durationSeconds);
 
   const ctx = getUserContext();
-  const goal = ctx?.goal || 'General Speaking Fluency';
-  const level = ctx?.level || 'Intermediate';
-  const interests = (ctx?.interests && ctx.interests.length > 0) ? ctx.interests.join(', ') : 'General Knowledge';
+  const goal = sanitizePromptText(ctx?.goal || 'General Speaking Fluency');
+  const level = sanitizePromptText(ctx?.level || 'Intermediate');
+  const interests = sanitizePromptText((ctx?.interests && ctx.interests.length > 0) ? ctx.interests.join(', ') : 'General Knowledge');
   const feedbackStyle = ctx?.feedbackStyle || 'balanced';
-  const tone = ctx?.speakingTone || 'Professional & Articulate';
+  const tone = sanitizePromptText(ctx?.speakingTone || 'Professional & Articulate');
 
   const styleInstruction = feedbackStyle === 'strict'
     ? 'CRITIQUE RIGOR: STRICT. Zero sugarcoating. Analyze with exceptional linguistic precision. Catch subtle grammar flaws, awkward preposition usage, filler words, and informal register.'
@@ -376,7 +414,9 @@ export async function processSpeechWithAI(
     ? 'CRITIQUE RIGOR: GENTLE & ENCOURAGING. Emphasize confidence, flow, and communication intent. Only correct 1-2 major grammatical issues.'
     : 'CRITIQUE RIGOR: BALANCED & ACTIONABLE. Acknowledge great communicative flow while directly showing 1-2 precise grammatical/idiomatic upgrades.';
 
-  const topicContext = activeTopic ? `Current Session Topic: "${activeTopic.title}". Prompt was: "${activeTopic.starterPrompt}"` : 'Free speaking session.';
+  const topicContext = activeTopic 
+    ? `Current Session Topic: "${sanitizePromptText(activeTopic.title)}". Prompt was: "${sanitizePromptText(activeTopic.starterPrompt)}"` 
+    : 'Free speaking session.';
 
   const systemPrompt = `You are Articulate, an elite, highly empathetic AI English speaking coach.
 ${topicContext}
@@ -389,7 +429,7 @@ STUDENT PROFILE:
 - ${styleInstruction}
 
 STUDENT SPOKE:
-"${transcribedText}"
+"${cleanTranscript}"
 
 COACHING MANDATE:
 1. KEY TAKEAWAYS (IN POINTS): Provide exactly 2 short, crisp bullet points. No long paragraphs.
@@ -450,7 +490,8 @@ Respond STRICTLY in JSON format matching this schema:
 
           if (response.ok) {
             const data = await response.json();
-            evaluation = JSON.parse(data.choices[0].message.content);
+            const content = data.choices?.[0]?.message?.content;
+            evaluation = safeParseJson<AISpeechEvaluation>(content);
             if (evaluation && evaluation.overallScore) {
               break;
             }
@@ -478,7 +519,7 @@ Respond STRICTLY in JSON format matching this schema:
             const data = await response.json();
             const contentText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (contentText) {
-              evaluation = JSON.parse(contentText);
+              evaluation = safeParseJson<AISpeechEvaluation>(contentText);
               if (evaluation && evaluation.overallScore) {
                 break;
               }
@@ -508,7 +549,7 @@ Respond STRICTLY in JSON format matching this schema:
 
         if (response.ok) {
           const data = await response.json();
-          evaluation = JSON.parse(data.choices[0].message.content);
+          evaluation = safeParseJson<AISpeechEvaluation>(data.choices?.[0]?.message?.content);
         }
       } catch (dsErr) {
         console.warn("DeepSeek evaluation failed:", dsErr);

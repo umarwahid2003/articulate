@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
   const navigate = useNavigate();
-  const { profile, user } = useAuth();
+  const { profile, user, signOut } = useAuth();
   const [sessions, setSessions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -28,7 +28,8 @@ export function Profile() {
   const streak = calculateStreak(sessions) || profile?.current_streak || 0;
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
+    navigate('/login', { replace: true });
   };
 
   // Extract name logic

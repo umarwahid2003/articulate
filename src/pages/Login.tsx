@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/Button';
-import { Mascot } from '../components/Mascot';
+import { Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
 
@@ -34,9 +34,20 @@ export function Login() {
         initial={{ opacity: 0, scale: 0.9 }} 
         animate={{ opacity: 1, scale: 1 }} 
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(20px)' }}
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(10px)' }}
       >
-        <Mascot state="standing" size={180} />
+        <div style={{
+          width: '76px',
+          height: '76px',
+          borderRadius: '24px',
+          backgroundColor: 'var(--grove-moss)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 12px 32px rgba(47, 75, 60, 0.25)'
+        }}>
+          <Mic size={38} color="#ffffff" />
+        </div>
       </motion.div>
       
       <motion.div 
@@ -53,7 +64,7 @@ export function Login() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {error && <div style={{ color: 'var(--grove-red)', fontSize: '14px', textAlign: 'center' }}>{error}</div>}
+          {error && <div style={{ color: 'var(--error-brick)', fontSize: '14px', textAlign: 'center' }}>{error}</div>}
           
           <button 
             onClick={handleGoogleLogin}

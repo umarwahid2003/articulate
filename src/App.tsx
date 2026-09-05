@@ -1,21 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home } from './pages/Home';
-import { Onboarding } from './pages/Onboarding';
-import { Practice } from './pages/Practice';
-import { Progress } from './pages/Progress';
-import { Profile } from './pages/Profile';
-import { AccountDetails } from './pages/AccountDetails';
-import { CoachContext } from './pages/CoachContext';
-import { Login } from './pages/Login';
-import { SignUp } from './pages/SignUp';
-import { TermsAcceptance } from './pages/TermsAcceptance';
-import GroveOrb from './components/GroveOrb';
 import { BottomNavigation } from './components/BottomNavigation';
 import { PracticeSheet } from './components/PracticeSheet';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { isSupabaseConfigured } from './lib/supabase';
+
+// Lazy load route pages for high-speed bundle splitting
+const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
+const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const Practice = lazy(() => import('./pages/Practice').then(m => ({ default: m.Practice })));
+const Progress = lazy(() => import('./pages/Progress').then(m => ({ default: m.Progress })));
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const AccountDetails = lazy(() => import('./pages/AccountDetails').then(m => ({ default: m.AccountDetails })));
+const CoachContext = lazy(() => import('./pages/CoachContext').then(m => ({ default: m.CoachContext })));
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const SignUp = lazy(() => import('./pages/SignUp').then(m => ({ default: m.SignUp })));
+const TermsAcceptance = lazy(() => import('./pages/TermsAcceptance').then(m => ({ default: m.TermsAcceptance })));
+
+const PageLoader = () => (
+  <div style={{ 
+    height: '100dvh', 
+    minHeight: '100vh',
+    width: '100%', 
+    display: 'flex', 
+    flexDirection: 'column',
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: 'var(--surface-base)', 
+    gap: '12px'
+  }}>
+    <div style={{
+      color: 'var(--grove-moss)', 
+      fontFamily: 'var(--font-display)', 
+      fontSize: '22px',
+      fontWeight: 600,
+      letterSpacing: '-0.02em',
+      animation: 'animate-pulse 1.8s ease-in-out infinite'
+    }}>
+      Articulate
+    </div>
+    <div style={{
+      width: '28px',
+      height: '2px',
+      borderRadius: '2px',
+      backgroundColor: 'var(--grove-moss)',
+      opacity: 0.3,
+      animation: 'animate-pulse 1.8s ease-in-out infinite'
+    }} />
+  </div>
+);
 
 const Shell = () => {
   const [isPracticeSheetOpen, setIsPracticeSheetOpen] = useState(false);
@@ -55,37 +89,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [user, profile, loading, location, navigate]);
 
   if (loading) {
-    return (
-      <div style={{ 
-        height: '100vh', 
-        width: '100vw', 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        backgroundColor: 'var(--surface-base)', 
-        gap: '16px'
-      }}>
-        <div style={{
-          color: 'var(--grove-moss)', 
-          fontFamily: 'var(--font-display)', 
-          fontSize: '24px',
-          fontWeight: 600,
-          letterSpacing: '-0.02em',
-          animation: 'animate-pulse 2s ease-in-out infinite'
-        }}>
-          Articulate
-        </div>
-        <div style={{
-          width: '32px',
-          height: '3px',
-          borderRadius: '2px',
-          backgroundColor: 'var(--grove-moss)',
-          opacity: 0.3,
-          animation: 'animate-pulse 2s ease-in-out infinite'
-        }} />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return <>{children}</>;
@@ -95,67 +99,67 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/onboarding" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <Onboarding />
-          </motion.div>
-        } />
-        
-        <Route path="/login" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <Login />
-          </motion.div>
-        } />
-        <Route path="/signup" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <SignUp />
-          </motion.div>
-        } />
-        
-        <Route path="/terms" element={
-          <ProtectedRoute>
-            <TermsAcceptance />
-          </ProtectedRoute>
-        } />
-        
-        <Route element={<ProtectedRoute><Shell /></ProtectedRoute>}>
-          <Route path="/" element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <Home />
+    <Suspense fallback={<PageLoader />}>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/onboarding" element={
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              <Onboarding />
             </motion.div>
           } />
-          <Route path="/practice" element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <Practice />
+          
+          <Route path="/login" element={
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              <Login />
             </motion.div>
           } />
-          <Route path="/context" element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <CoachContext />
+          <Route path="/signup" element={
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              <SignUp />
             </motion.div>
           } />
-          <Route path="/progress" element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <Progress />
-            </motion.div>
+          
+          <Route path="/terms" element={
+            <ProtectedRoute>
+              <TermsAcceptance />
+            </ProtectedRoute>
           } />
-          <Route path="/profile" element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <Profile />
-            </motion.div>
-          } />
-          <Route path="/account-details" element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <AccountDetails />
-            </motion.div>
-          } />
-        </Route>
-        
-        <Route path="/preview" element={<div style={{height: '100vh', width: '100vw'}}><GroveOrb showControls={true} /></div>} />
-      </Routes>
-    </AnimatePresence>
+          
+          <Route element={<ProtectedRoute><Shell /></ProtectedRoute>}>
+            <Route path="/" element={
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <Home />
+              </motion.div>
+            } />
+            <Route path="/practice" element={
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <Practice />
+              </motion.div>
+            } />
+            <Route path="/context" element={
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <CoachContext />
+              </motion.div>
+            } />
+            <Route path="/progress" element={
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <Progress />
+              </motion.div>
+            } />
+            <Route path="/profile" element={
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <Profile />
+              </motion.div>
+            } />
+            <Route path="/account-details" element={
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <AccountDetails />
+              </motion.div>
+            } />
+          </Route>
+        </Routes>
+      </AnimatePresence>
+    </Suspense>
   );
 };
 

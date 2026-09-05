@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
-import { Mascot } from '../components/Mascot';
+import { Sparkles, Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function SignUp() {
@@ -33,9 +33,20 @@ export function SignUp() {
         initial={{ opacity: 0, scale: 0.9 }} 
         animate={{ opacity: 1, scale: 1 }} 
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(20px)' }}
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(10px)' }}
       >
-        <Mascot state="listening" size={180} />
+        <div style={{
+          width: '76px',
+          height: '76px',
+          borderRadius: '24px',
+          backgroundColor: 'var(--grove-moss)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 12px 32px rgba(47, 75, 60, 0.25)'
+        }}>
+          <Sparkles size={38} color="#ffffff" />
+        </div>
       </motion.div>
       
       <motion.div 

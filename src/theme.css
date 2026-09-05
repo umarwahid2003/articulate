@@ -5,6 +5,7 @@
   --surface-raised: #FFFFFF;
   --surface-sunken: #EFEDE7;
   --ink-primary: #14171A;
+  --ink-base: #14171A;
   --ink-secondary: #5B615E;
   --ink-tertiary: #8B918D;
   --border-hairline: #E3E1DA;
@@ -14,6 +15,7 @@
   --grove-moss: #2F4B3C;
   --grove-moss-tint: #DCE6DE;
   --error-brick: #B24A3C;
+  --grove-red: #B24A3C;
 
   /* Tier 3 - The Gorget Gradient */
   --gorget-gradient: linear-gradient(to right, #4FB8AC, #7C6FCB);
@@ -68,6 +70,7 @@
     --surface-raised: #171B19;
     --surface-sunken: #0B0D0C;
     --ink-primary: #F2F1ED;
+    --ink-base: #F2F1ED;
     --ink-secondary: #9CA39E;
     --ink-tertiary: #666C68;
     --border-hairline: rgba(37, 42, 39, 0.18);
@@ -75,6 +78,7 @@
     --grove-moss: #335241;
     --grove-moss-tint: #1B2620;
     --error-brick: #C96A5C;
+    --grove-red: #C96A5C;
   }
 }
 

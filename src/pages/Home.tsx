@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { NavigationBar } from '../components/NavigationBar';
-import { Mascot } from '../components/Mascot';
 import { Button } from '../components/Button';
 import { Mic, Check } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
@@ -26,13 +25,11 @@ export function Home() {
     }
   }, []);
 
-  // Calculate real week days status (Monday to Sunday)
-  const calculateWeekDays = () => {
+  // Memoize week days calculation
+  const weekDays = useMemo(() => {
     const now = new Date();
-    // Monday = 0, Tuesday = 1, ... Sunday = 6
     const currentDayIndex = (now.getDay() + 6) % 7;
     
-    // Find Monday of the current week at 00:00:00
     const monday = new Date(now);
     monday.setDate(now.getDate() - currentDayIndex);
     monday.setHours(0, 0, 0, 0);
@@ -44,7 +41,6 @@ export function Home() {
       targetDate.setDate(monday.getDate() + index);
       const targetDateKey = toLocalDateString(targetDate);
 
-      // Check if user practiced on this exact day
       const hasPracticed = sessions.some(
         s => toLocalDateString(s.timestamp) === targetDateKey
       );
@@ -59,13 +55,12 @@ export function Home() {
         isPast,
       };
     });
-  };
+  }, [sessions]);
 
-  const weekDays = calculateWeekDays();
-  const streak = calculateStreak(sessions);
-  const isPracticedToday = hasPracticedToday(sessions);
+  const streak = useMemo(() => calculateStreak(sessions), [sessions]);
+  const isPracticedToday = useMemo(() => hasPracticedToday(sessions), [sessions]);
 
-  const getGreeting = () => {
+  const greeting = useMemo(() => {
     let name = profile?.first_name;
     if (!name && user?.user_metadata) {
       const fullName = user.user_metadata.full_name || user.user_metadata.name;
@@ -73,104 +68,60 @@ export function Home() {
         name = fullName.split(' ')[0];
       }
     }
-    name = name || 'There';
-
-    return { name };
-  };
-
-  const greeting = getGreeting();
+    return { name: name || 'There' };
+  }, [profile?.first_name, user?.user_metadata]);
 
   return (
     <Layout className="page-with-bottom-nav">
       <NavigationBar />
-      <style>
-        {`
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(31, 122, 108, 0.4); }
-            70% { box-shadow: 0 0 0 6px rgba(31, 122, 108, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(31, 122, 108, 0); }
-          }
-        `}
-      </style>
       
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingBottom: '140px', marginTop: '16px' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        flex: 1, 
+        justifyContent: 'center', 
+        paddingBottom: '96px', 
+        maxWidth: '480px', 
+        width: '100%', 
+        margin: '0 auto' 
+      }}>
         
-        {/* Mascot Hero */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0 }}
-          style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center',
-            marginTop: '16px'
-          }}
-        >
-          <Mascot state="standing" size={185} />
-        </motion.div>
-
         {/* Header Greeting */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          style={{ textAlign: 'center', marginTop: '48px', marginBottom: '32px' }}
+          transition={{ duration: 0.35 }}
+          style={{ textAlign: 'center', marginTop: 0, marginBottom: '32px' }}
         >
           <h1 style={{ 
-            fontSize: '32px', 
+            fontSize: '48px', 
             fontFamily: 'var(--font-display)', 
             color: 'var(--ink-base)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
             margin: 0
           }}>
-            Hello, <span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 400, color: 'var(--grove-moss)', fontSize: '36px' }}>{greeting.name}</span>
+            Hello, <span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 400, color: 'var(--grove-moss)', fontSize: '54px' }}>{greeting.name}</span>
           </h1>
-          <p style={{ color: 'var(--ink-secondary)', fontSize: '16px', marginTop: '8px' }}>
+          <p style={{ color: 'var(--ink-secondary)', fontSize: '18px', marginTop: '10px', lineHeight: 1.4 }}>
             {streak > 0 
               ? (isPracticedToday ? `🔥 ${streak} day streak! Great practice today.` : `🔥 ${streak} day streak! Practice today to keep it.`)
               : (sessions.length > 0 ? "Let's start a new daily streak!" : "Ready for today's practice?")}
           </p>
         </motion.div>
 
-        {/* Main Action Button with perfectly aligned mic icon */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          style={{ marginBottom: '32px' }}
-        >
-          <Button 
-            variant="primary" 
-            size="large"
-            leadingIcon={<Mic size={21} />}
-            style={{ 
-              width: '100%', 
-              fontSize: '20px', 
-              fontFamily: 'var(--font-display)',
-              letterSpacing: '-0.02em',
-              height: '64px',
-              color: '#ffffff',
-              borderRadius: '20px', 
-              fontWeight: 600,
-              boxShadow: '0 10px 28px rgba(31, 122, 108, 0.28)'
-            }}
-            onClick={() => openPracticeSheet()}
-          >
-            Start Practice
-          </Button>
-        </motion.div>
-
         {/* Weekly Habit Tracker with matching border and shadow */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.15 }}
           style={{ 
             backgroundColor: 'var(--surface-raised)', 
             borderRadius: '24px', 
             padding: '22px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.08)'
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.08)',
+            marginBottom: '24px'
           }}
         >
           <h3 style={{ fontSize: '17px', fontFamily: 'var(--font-display)', margin: '0 0 16px 0', color: 'var(--ink-base)' }}>
@@ -194,7 +145,7 @@ export function Home() {
                     border: !isFilled && isCurrentDay ? '2px solid var(--grove-moss)' : 'none',
                     display: 'flex', 
                     alignItems: 'center', 
-                    justifyContent: 'center',
+                    justifyContent: 'center', 
                     fontSize: '14px', 
                     fontWeight: 700,
                     boxShadow: isFilled ? '0 2px 8px rgba(31, 122, 108, 0.25)' : 'none',
@@ -208,6 +159,34 @@ export function Home() {
               );
             })}
           </div>
+        </motion.div>
+
+        {/* Main Action Button with perfectly aligned mic icon */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          style={{ marginBottom: '32px' }}
+        >
+          <Button 
+            variant="primary" 
+            size="large"
+            leadingIcon={<Mic size={21} />}
+            style={{ 
+              width: '100%', 
+              fontSize: '20px', 
+              fontFamily: 'var(--font-display)',
+              letterSpacing: '-0.02em',
+              height: '64px',
+              color: '#ffffff',
+              borderRadius: '20px', 
+              fontWeight: 600,
+              boxShadow: '0 10px 28px rgba(31, 122, 108, 0.28)'
+            }}
+            onClick={() => openPracticeSheet()}
+          >
+            Start Practice
+          </Button>
         </motion.div>
 
       </div>

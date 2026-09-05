@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { NavigationBar } from '../components/NavigationBar';
 import { ProgressRing } from '../components/ProgressRing';
-import { Mascot } from '../components/Mascot';
 import { Card } from '../components/Card';
 import { SessionRecord } from './Practice';
 import { UserContext } from '../types/user';
@@ -37,21 +36,26 @@ export const Progress = () => {
 
   // Daily Practice Time vs Goal Calculation
   const dailyGoalMinutes = userContext?.dailyGoalMinutes || 5;
-  const todayDateKey = toLocalDateString(new Date());
-  const todaySessions = sessions.filter(
-    s => toLocalDateString(s.timestamp) === todayDateKey
-  );
 
-  // Total seconds practiced today
-  const todaySeconds = todaySessions.reduce((sum, s) => sum + (s.durationSeconds || 60), 0);
-  const todayMinutes = Math.round((todaySeconds / 60) * 10) / 10;
-  
-  // Calculate percentage toward daily goal
-  const dailyProgressPercent = Math.min(100, Math.round((todaySeconds / (dailyGoalMinutes * 60)) * 100));
+  const { todaySessions, todaySeconds, todayMinutes, dailyProgressPercent } = useMemo(() => {
+    const todayDateKey = toLocalDateString(new Date());
+    const matchedSessions = sessions.filter(
+      s => toLocalDateString(s.timestamp) === todayDateKey
+    );
+    const seconds = matchedSessions.reduce((sum, s) => sum + (s.durationSeconds || 60), 0);
+    const minutes = Math.round((seconds / 60) * 10) / 10;
+    const percent = Math.min(100, Math.round((seconds / (dailyGoalMinutes * 60)) * 100));
+    return {
+      todaySessions: matchedSessions,
+      todaySeconds: seconds,
+      todayMinutes: minutes,
+      dailyProgressPercent: percent
+    };
+  }, [sessions, dailyGoalMinutes]);
 
   // Unique practiced days count & active consecutive streak
-  const uniquePracticedDays = getUniquePracticedDays(sessions);
-  const currentStreak = calculateStreak(sessions);
+  const uniquePracticedDays = useMemo(() => getUniquePracticedDays(sessions), [sessions]);
+  const currentStreak = useMemo(() => calculateStreak(sessions), [sessions]);
 
   const formatTime = (isoString: string) => {
     try {
@@ -67,36 +71,38 @@ export const Progress = () => {
     }
   };
 
-  const isDailyGoalUnlocked = dailyProgressPercent >= 100;
-  const isWeeklyStreakUnlocked = currentStreak >= 7 || uniquePracticedDays >= 7;
-  const isMonthlyStreakUnlocked = currentStreak >= 30 || uniquePracticedDays >= 30;
+  const achievements = useMemo(() => {
+    const isDailyGoalUnlocked = dailyProgressPercent >= 100;
+    const isWeeklyStreakUnlocked = currentStreak >= 7 || uniquePracticedDays >= 7;
+    const isMonthlyStreakUnlocked = currentStreak >= 30 || uniquePracticedDays >= 30;
 
-  const achievements = [
-    {
-      id: 1,
-      title: 'Daily Goal',
-      icon: Target,
-      unlocked: isDailyGoalUnlocked,
-      task: `Reach ${dailyGoalMinutes}m goal`,
-      reward: isDailyGoalUnlocked ? 'Unlocked' : `${todayMinutes}/${dailyGoalMinutes}m`
-    },
-    {
-      id: 2,
-      title: 'Weekly Streak',
-      icon: Flame,
-      unlocked: isWeeklyStreakUnlocked,
-      task: 'Practice 7 days',
-      reward: isWeeklyStreakUnlocked ? 'Unlocked' : `${Math.min(7, Math.max(currentStreak, uniquePracticedDays))}/7 Days`
-    },
-    {
-      id: 3,
-      title: 'Monthly Streak',
-      icon: Trophy,
-      unlocked: isMonthlyStreakUnlocked,
-      task: 'Practice 30 days',
-      reward: isMonthlyStreakUnlocked ? 'Unlocked' : `${Math.min(30, Math.max(currentStreak, uniquePracticedDays))}/30 Days`
-    }
-  ];
+    return [
+      {
+        id: 1,
+        title: 'Daily Goal',
+        icon: Target,
+        unlocked: isDailyGoalUnlocked,
+        task: `Reach ${dailyGoalMinutes}m goal`,
+        reward: isDailyGoalUnlocked ? 'Unlocked' : `${todayMinutes}/${dailyGoalMinutes}m`
+      },
+      {
+        id: 2,
+        title: 'Weekly Streak',
+        icon: Flame,
+        unlocked: isWeeklyStreakUnlocked,
+        task: 'Practice 7 days',
+        reward: isWeeklyStreakUnlocked ? 'Unlocked' : `${Math.min(7, Math.max(currentStreak, uniquePracticedDays))}/7 Days`
+      },
+      {
+        id: 3,
+        title: 'Monthly Streak',
+        icon: Trophy,
+        unlocked: isMonthlyStreakUnlocked,
+        task: 'Practice 30 days',
+        reward: isMonthlyStreakUnlocked ? 'Unlocked' : `${Math.min(30, Math.max(currentStreak, uniquePracticedDays))}/30 Days`
+      }
+    ];
+  }, [dailyProgressPercent, currentStreak, uniquePracticedDays, dailyGoalMinutes, todayMinutes]);
 
   return (
     <Layout className="page-with-bottom-nav">
@@ -104,9 +110,34 @@ export const Progress = () => {
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '80px', marginTop: '16px' }}>
         
-        {/* Top Daily Practice Time vs Goal Card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: 'flex', gap: '16px', justifyContent: 'space-between', alignItems: 'center', padding: '24px', backgroundColor: 'var(--surface-raised)', borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ flex: 1 }}>
+        {/* Top Feature Card: Daily Goal & Progress */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.4 }}
+          style={{
+            backgroundColor: 'var(--surface-raised)',
+            borderRadius: '24px',
+            padding: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+            border: '1px solid var(--border-subtle)'
+          }}
+        >
+          <div style={{ flex: 1, paddingRight: '16px' }}>
+            <span style={{ 
+              fontSize: '11px', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.08em', 
+              color: 'var(--grove-moss)', 
+              fontWeight: 800,
+              display: 'inline-block',
+              marginBottom: '6px'
+            }}>
+              Today's Practice
+            </span>
             <h2 style={{ fontSize: '28px', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>
               {dailyProgressPercent >= 100 
                 ? "Daily Goal Met!" 
@@ -119,7 +150,6 @@ export const Progress = () => {
                 ? `${Math.max(0, Math.round((dailyGoalMinutes - todayMinutes) * 10) / 10)} mins remaining to hit today's goal.`
                 : `Complete a session today toward your ${dailyGoalMinutes} min daily goal.`}
             </p>
-            <Mascot state="celebrating" size={100} style={{ marginTop: '16px' }} />
           </div>
           <ProgressRing progress={dailyProgressPercent} size="large">
             {dailyProgressPercent}%

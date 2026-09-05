@@ -77,7 +77,7 @@ export const PracticeSheet = ({ isOpen, onClose }: PracticeSheetProps) => {
               title="Free-Form Speaking"
               subtitle="Speak about anything on your mind with instant text feedback."
               interactive
-              onClick={() => handleSelectOption('/practice')}
+              onClick={() => handleSelectOption('/practice', { autoSuggest: false })}
               media={
                 <div style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(31, 122, 108, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Mic size={24} color="var(--grove-moss)" />
