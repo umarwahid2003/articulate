@@ -616,7 +616,8 @@ export const VoiceRecorder = ({
           overflowY: 'auto',
           flexShrink: 0,
           boxSizing: 'border-box',
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
+          marginBottom: '36px'
         }}
       >
         {error ? (
