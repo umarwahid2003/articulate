@@ -1,0 +1,19 @@
+{
+  "short_name": "Articulate",
+  "name": "Articulate — Speech Coaching",
+  "description": "Mindful speech clarity and deliberate articulation practice.",
+  "icons": [
+    {
+      "src": "/articulate-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512 any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F7F6F2",
+  "theme_color": "#2F4B3C",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/"
+}
