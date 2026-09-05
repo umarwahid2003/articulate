@@ -15,14 +15,24 @@ export function Home() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
 
   useEffect(() => {
-    try {
-      const historyRaw = localStorage.getItem('grove_session_history');
-      if (historyRaw) {
-        setSessions(JSON.parse(historyRaw));
+    const loadSessions = () => {
+      try {
+        const historyRaw = localStorage.getItem('grove_session_history');
+        if (historyRaw) {
+          setSessions(JSON.parse(historyRaw));
+        }
+      } catch (e) {
+        console.error("Error reading sessions:", e);
       }
-    } catch (e) {
-      console.error("Error reading sessions:", e);
-    }
+    };
+
+    loadSessions();
+    window.addEventListener('storage', loadSessions);
+    window.addEventListener('grove_session_updated', loadSessions);
+    return () => {
+      window.removeEventListener('storage', loadSessions);
+      window.removeEventListener('grove_session_updated', loadSessions);
+    };
   }, []);
 
   // Memoize week days calculation

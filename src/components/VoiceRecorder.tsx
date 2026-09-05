@@ -3,10 +3,11 @@ import { Mic, Square, Loader2, Volume2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpeechRecognition as CapacitorSpeech } from '@capacitor-community/speech-recognition';
 import { Capacitor } from '@capacitor/core';
-import { transcribeAudioWithWhisper } from '../lib/ai';
+import { transcribeAudioWithWhisper, isMeaningfulSpeech } from '../lib/ai';
 
 interface VoiceRecorderProps {
   onTranscriptionComplete?: (text: string, durationSeconds: number) => void;
+  onRecordingStart?: () => void;
   isProcessing?: boolean;
   activePrompt?: string;
 }
@@ -24,6 +25,7 @@ function mergeTranscripts(prev: string, current: string): string {
 
 export const VoiceRecorder = ({ 
   onTranscriptionComplete, 
+  onRecordingStart,
   isProcessing = false,
   activePrompt
 }: VoiceRecorderProps) => {
@@ -33,6 +35,8 @@ export const VoiceRecorder = ({
   const [error, setError] = useState<string | null>(null);
   const [transcription, setTranscription] = useState<string>('');
   const [audioLevels, setAudioLevels] = useState<number[]>([0.15, 0.2, 0.3, 0.2, 0.15]);
+  
+  const hasAudibleVoiceRef = useRef<boolean>(false);
   
   const webRecognitionRef = useRef<any>(null);
   const transcriptionRef = useRef<string>('');
@@ -130,6 +134,16 @@ export const VoiceRecorder = ({
         if (!analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(dataArray);
 
+        // Acoustic energy calculation: check if voice exceeded ambient silence floor
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const avgEnergy = sum / (bufferLength * 255);
+        if (avgEnergy > 0.04) {
+          hasAudibleVoiceRef.current = true;
+        }
+
         // Sample 7 frequency points across speech spectrum
         const indices = [2, 4, 6, 8, 10, 12, 14];
         const levels = indices.map(idx => {
@@ -165,12 +179,14 @@ export const VoiceRecorder = ({
     setIsRecording(false);
     stopAudioAnalysis();
     
-    // 1. Stop Web Speech Recognition
+    // 1. Stop Web Speech Recognition safely without re-triggering onend
     if (webRecognitionRef.current) {
-      try {
-        webRecognitionRef.current.stop();
-      } catch (e) {}
+      const rec = webRecognitionRef.current;
       webRecognitionRef.current = null;
+      try {
+        rec.onend = null;
+        rec.stop();
+      } catch (e) {}
     }
 
     if (Capacitor.isNativePlatform()) {
@@ -210,7 +226,7 @@ export const VoiceRecorder = ({
     let finalText = (transcriptionRef.current || totalCommitted).trim();
 
     // 4. Try Groq Whisper Large V3 Turbo for ultra-high accuracy
-    if (recordedBlob && recordedBlob.size > 1500) {
+    if (recordedBlob && recordedBlob.size > 1500 && hasAudibleVoiceRef.current) {
       try {
         setIsWhisperTranscribing(true);
         const whisperText = await transcribeAudioWithWhisper(recordedBlob);
@@ -226,10 +242,19 @@ export const VoiceRecorder = ({
     }
 
     const recordedSeconds = Math.max(1, elapsedRef.current);
+    const detectedAcousticSound = audioContextRef.current ? hasAudibleVoiceRef.current : true;
+
+    // STRICT VALIDATION: Must have acoustic sound AND meaningful spoken words
+    if (!detectedAcousticSound || !isMeaningfulSpeech(finalText)) {
+      setIsWhisperTranscribing(false);
+      setTranscription('');
+      transcriptionRef.current = '';
+      setError("Didn't detect any speech. Speak clearly into your mic and try again.");
+      return;
+    }
+
     if (onTranscriptionComplete && finalText) {
       onTranscriptionComplete(finalText, recordedSeconds);
-    } else if (!finalText) {
-      setError("Didn't catch any speech. Tap mic and try again.");
     }
   }, [onTranscriptionComplete]);
 
@@ -240,6 +265,8 @@ export const VoiceRecorder = ({
     accumulatedFinalRef.current = '';
     currentSessionFinalRef.current = '';
     audioChunksRef.current = [];
+    hasAudibleVoiceRef.current = false;
+    onRecordingStart?.();
     
     try {
       // 1. Initialize Audio MediaRecorder and Waveform Analyser

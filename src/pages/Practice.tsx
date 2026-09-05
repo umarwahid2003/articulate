@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { NavigationBar } from '../components/NavigationBar';
 import { VoiceRecorder } from '../components/VoiceRecorder';
-import { processSpeechWithAI, generatePersonalizedTopics, Message } from '../lib/ai';
+import { processSpeechWithAI, generatePersonalizedTopics, isMeaningfulSpeech, Message } from '../lib/ai';
 import { calculateStreak } from '../lib/streak';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,8 +53,16 @@ export const Practice = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [history, setHistory] = useState<Message[]>([]);
   const [lastEvaluation, setLastEvaluation] = useState<AISpeechEvaluation | null>(null);
+  const [evaluationError, setEvaluationError] = useState<string | null>(null);
 
   const currentTopic = topics[topicIndex] || null;
+
+  useEffect(() => {
+    if (evaluationError) {
+      const timer = setTimeout(() => setEvaluationError(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [evaluationError]);
 
   const fetchTopics = async (fresh: boolean = false) => {
     setLoadingTopics(true);
@@ -112,9 +120,21 @@ export const Practice = () => {
   };
 
   const handleTranscriptionComplete = async (text: string, durationSeconds: number = 30) => {
+    // 1. Strict validation: Never process silence, noise or hallucinations
+    if (!isMeaningfulSpeech(text)) {
+      setEvaluationError("Speech was too brief or silent to evaluate. Speak a sentence or two!");
+      return;
+    }
+
     setIsProcessing(true);
+    setEvaluationError(null);
     try {
       const { evaluation, newHistory } = await processSpeechWithAI(text, history, currentTopic, durationSeconds);
+      
+      if (!evaluation || typeof evaluation.overallScore !== 'number') {
+        throw new Error("Invalid AI evaluation response");
+      }
+
       setHistory(newHistory);
       setLastEvaluation(evaluation);
 
@@ -123,9 +143,9 @@ export const Practice = () => {
         id: Date.now().toString(),
         topic: currentTopic?.title || "Free-Form Speech",
         timestamp: new Date().toISOString(),
-        score: evaluation.overallScore || 80,
+        score: evaluation.overallScore,
         transcription: text,
-        scores: evaluation.scores || { fluency: 7, grammar: 7, vocabulary: 8, confidence: 8 },
+        scores: evaluation.scores || { fluency: 7, grammar: 7, vocabulary: 7, confidence: 7 },
         feedback: evaluation.feedback,
         keyPoints: evaluation.keyPoints,
         corrections: evaluation.corrections,
@@ -146,6 +166,7 @@ export const Practice = () => {
         }
         const updated = [sessionRecord, ...existing];
         localStorage.setItem('grove_session_history', JSON.stringify(updated));
+        window.dispatchEvent(new Event('grove_session_updated'));
 
         // Calculate and sync new streak
         const newStreak = calculateStreak(updated);
@@ -156,8 +177,13 @@ export const Practice = () => {
         console.error("Error saving session history", e);
       }
 
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Speech evaluation error:", err);
+      if (err?.message === 'INSUFFICIENT_SPEECH') {
+        setEvaluationError("Speech was too brief or silent. Speak a few sentences to get feedback.");
+      } else {
+        setEvaluationError("AI coach could not process this speech. Please try again.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -381,6 +407,10 @@ export const Practice = () => {
         <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <VoiceRecorder 
             onTranscriptionComplete={handleTranscriptionComplete}
+            onRecordingStart={() => {
+              setLastEvaluation(null);
+              setEvaluationError(null);
+            }}
             isProcessing={isProcessing}
             activePrompt={currentTopic?.starterPrompt}
           />
@@ -606,6 +636,47 @@ export const Practice = () => {
               </motion.button>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notice for Brief Speech / Silence Errors */}
+      <AnimatePresence>
+        {evaluationError && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed',
+              top: '64px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'var(--surface-raised)',
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
+              borderRadius: '100px',
+              padding: '8px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              zIndex: 400,
+              maxWidth: '92%',
+              boxSizing: 'border-box'
+            }}
+          >
+            <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--error-brick)', flexShrink: 0 }} />
+            <span style={{ fontSize: '13px', color: 'var(--ink-base)', fontWeight: 600, fontFamily: 'var(--font-display)', lineHeight: 1.3 }}>
+              {evaluationError}
+            </span>
+            <button 
+              onClick={() => setEvaluationError(null)} 
+              style={{ background: 'none', border: 'none', color: 'var(--ink-secondary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+              aria-label="Dismiss error"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </Layout>

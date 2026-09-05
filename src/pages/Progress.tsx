@@ -15,23 +15,33 @@ export const Progress = () => {
   const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
 
   useEffect(() => {
-    try {
-      const historyRaw = localStorage.getItem('grove_session_history');
-      if (historyRaw) {
-        setSessions(JSON.parse(historyRaw));
+    const loadData = () => {
+      try {
+        const historyRaw = localStorage.getItem('grove_session_history');
+        if (historyRaw) {
+          setSessions(JSON.parse(historyRaw));
+        }
+      } catch (e) {
+        console.error("Error reading sessions:", e);
       }
-    } catch (e) {
-      console.error("Error reading sessions:", e);
-    }
 
-    try {
-      const contextRaw = localStorage.getItem('grove_user_context');
-      if (contextRaw) {
-        setUserContext(JSON.parse(contextRaw));
+      try {
+        const contextRaw = localStorage.getItem('grove_user_context');
+        if (contextRaw) {
+          setUserContext(JSON.parse(contextRaw));
+        }
+      } catch (e) {
+        console.error("Error reading context:", e);
       }
-    } catch (e) {
-      console.error("Error reading context:", e);
-    }
+    };
+
+    loadData();
+    window.addEventListener('storage', loadData);
+    window.addEventListener('grove_session_updated', loadData);
+    return () => {
+      window.removeEventListener('storage', loadData);
+      window.removeEventListener('grove_session_updated', loadData);
+    };
   }, []);
 
   // Daily Practice Time vs Goal Calculation

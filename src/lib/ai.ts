@@ -187,6 +187,102 @@ export function sanitizePromptText(text: string): string {
 }
 
 /**
+ * Detect if text represents authentic, evaluatable human speech
+ * Filters out:
+ * - Empty or whitespace-only inputs
+ * - Whisper silence hallucinations ("Thank you.", "Thanks for watching", etc.)
+ * - Isolated filler words ("um", "uh", "okay", "yeah")
+ * - Audio bracket tokens ([music], [silence], etc.)
+ * - Inputs with fewer than 3 words or only 1 distinct word repeated
+ */
+export function isMeaningfulSpeech(text: string | null | undefined): boolean {
+  if (!text || typeof text !== 'string') return false;
+
+  // 1. Remove bracketed audio tags (e.g., [music], [applause], [silence], (bell), etc.)
+  const stripped = text
+    .replace(/[\[\({].*?[\]\)}]/g, ' ')
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'’“”…–—\\]/g, ' ')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!stripped || stripped.length < 2) return false;
+
+  // 2. Known Whisper silence hallucinations and background noise artifacts
+  const SILENCE_HALLUCINATIONS = new Set([
+    'thank you',
+    'thank you so much',
+    'thank you very much',
+    'thank you for watching',
+    'thanks for watching',
+    'thanks for watching and subscribing',
+    'thank you bye',
+    'thanks bye',
+    'thank you all',
+    'thank you everyone',
+    'thanks for listening',
+    'thank you for listening',
+    'thanks',
+    'bye',
+    'bye bye',
+    'goodbye',
+    'please subscribe',
+    'subscribe',
+    'like and subscribe',
+    'subtitles by',
+    'translated by',
+    'amara org',
+    'you',
+    'okay',
+    'ok',
+    'yes',
+    'no',
+    'yeah',
+    'yep',
+    'nope',
+    'hello',
+    'hi',
+    'hey',
+    'so',
+    'uh',
+    'um',
+    'ah',
+    'er',
+    'mm',
+    'hmm',
+    'huh',
+    'silence',
+    'music',
+    'applause',
+    'laughter',
+    'cheering',
+    'the end'
+  ]);
+
+  if (SILENCE_HALLUCINATIONS.has(stripped)) {
+    return false;
+  }
+
+  // 3. Count meaningful words (exclude pure filler grunts)
+  const words = stripped.split(' ').filter(Boolean);
+  const FILLERS = new Set(['um', 'uh', 'er', 'ah', 'mm', 'hmm', 'huh', 'like', 'you', 'so', 'ok', 'okay', 'yeah', 'yep']);
+  const nonFillerWords = words.filter(w => !FILLERS.has(w));
+
+  // Must have at least 3 words total AND at least 2 non-filler meaningful words
+  if (words.length < 3 || nonFillerWords.length < 2) {
+    return false;
+  }
+
+  // 4. Reject single-word repetition (e.g., "you you you", "thank thank thank")
+  const uniqueWords = new Set(words);
+  if (uniqueWords.size === 1) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Calculate speaking rate (Words Per Minute) and detect filler words
  */
 export function calculateSpeakingMetrics(text: string, durationSeconds: number) {
@@ -248,8 +344,11 @@ export async function transcribeAudioWithWhisper(audioBlob: Blob): Promise<strin
     }
 
     const data = await response.json();
-    if (data && typeof data.text === 'string' && data.text.trim()) {
-      return data.text.trim();
+    if (data && typeof data.text === 'string') {
+      const trimmed = data.text.trim();
+      if (isMeaningfulSpeech(trimmed)) {
+        return trimmed;
+      }
     }
     return null;
   } catch (err) {
@@ -394,6 +493,10 @@ export async function processSpeechWithAI(
   activeTopic?: TopicSuggestion | null,
   durationSeconds: number = 30
 ): Promise<{ evaluation: AISpeechEvaluation; newHistory: Message[] }> {
+  if (!isMeaningfulSpeech(transcribedText)) {
+    throw new Error("INSUFFICIENT_SPEECH");
+  }
+
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
@@ -596,33 +699,7 @@ Respond STRICTLY in JSON format matching this schema:
     };
   } catch (error: any) {
     console.error("Error communicating with AI Coach:", error);
-    
-    const fallbackEval: AISpeechEvaluation = {
-      overallScore: 78,
-      scores: { fluency: 7, grammar: 7, vocabulary: 8, confidence: 8 },
-      keyPoints: [
-        "Clear expression and active communication intent.",
-        "Focus on preposition accuracy and seamless sentence transitions."
-      ],
-      feedback: "Clear expression and active communication intent. Focus on preposition accuracy and seamless sentence transitions.",
-      corrections: [
-        {
-          original: transcribedText.length > 30 ? transcribedText.slice(0, 30) + '...' : transcribedText,
-          better: "Ensure complete clauses with precise tenses and transition words.",
-          reason: "Focus on subject-verb agreement and professional phrasing."
-        }
-      ],
-      followUpQuestion: "How did you first get interested in this area?",
-      reply: "How did you first get interested in this area?",
-      wpm: metrics.wpm,
-      fillerWords: metrics.fillerWords,
-      pacingNote: metrics.pacingNote
-    };
-
-    return {
-      evaluation: fallbackEval,
-      newHistory: history
-    };
+    throw error;
   }
 }
 
