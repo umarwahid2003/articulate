@@ -148,7 +148,7 @@ export const Onboarding = () => {
                 What is your main speaking goal?
               </h1>
               <p style={{ color: 'var(--ink-secondary)', fontSize: '15px', margin: '0 0 24px' }}>
-                Grove will tailor its conversations and coach feedback to this goal.
+                Articulate will tailor its conversations and coach feedback to this goal.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

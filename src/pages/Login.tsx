@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Button } from '../components/Button';
-import { Mic } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
+import { ArticulateLogo } from '../components/ArticulateLogo';
+import { motion } from 'framer-motion';
 
 export function Login() {
   const [loading, setLoading] = useState(false);
@@ -37,16 +36,9 @@ export function Login() {
         style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', transform: 'translateY(10px)' }}
       >
         <div style={{
-          width: '76px',
-          height: '76px',
-          borderRadius: '24px',
-          backgroundColor: 'var(--grove-moss)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 12px 32px rgba(47, 75, 60, 0.25)'
+          filter: 'drop-shadow(0 12px 28px rgba(0, 0, 0, 0.12))'
         }}>
-          <Mic size={38} color="#ffffff" />
+          <ArticulateLogo size={80} />
         </div>
       </motion.div>
       

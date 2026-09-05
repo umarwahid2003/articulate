@@ -57,7 +57,7 @@ export function TermsAcceptance() {
         </h1>
         
         <p style={{ color: 'var(--ink-secondary)', textAlign: 'center', marginBottom: '32px', lineHeight: 1.6, maxWidth: '400px' }}>
-          Grove uses Artificial Intelligence to listen to your practice sessions and provide coaching feedback. By proceeding, you agree to our Terms of Service and acknowledge that your voice data may be processed to improve your speaking skills.
+          Articulate uses Artificial Intelligence to listen to your practice sessions and provide coaching feedback. By proceeding, you agree to our Terms of Service and acknowledge that your voice data may be processed to improve your speaking skills.
         </p>
 
         {error && <div style={{ color: 'var(--error-brick)', fontSize: '14px', marginBottom: '16px' }}>{error}</div>}

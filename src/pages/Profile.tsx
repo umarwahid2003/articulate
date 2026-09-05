@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { calculateStreak } from '../lib/streak';
 import { LogOut, User, Bell, Shield, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ArticulateLogo } from '../components/ArticulateLogo';
 
 export function Profile() {
   const navigate = useNavigate();
@@ -155,6 +156,42 @@ export function Profile() {
             <LogOut size={20} style={{ marginRight: '12px' }} />
             Sign Out
           </button>
+        </motion.div>
+
+        {/* Subtle Brand Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.35, delay: 0.3 }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px 0 8px',
+            gap: '8px'
+          }}
+        >
+          <ArticulateLogo size={34} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: '13px', 
+              fontWeight: 600, 
+              fontFamily: 'var(--font-display)', 
+              color: 'var(--ink-secondary)',
+              letterSpacing: '0.04em'
+            }}>
+              ARTICULATE
+            </div>
+            <div style={{ 
+              fontSize: '12px', 
+              color: 'var(--ink-tertiary)', 
+              fontFamily: 'var(--font-body)',
+              marginTop: '2px'
+            }}>
+              Version 1.0.0
+            </div>
+          </div>
         </motion.div>
         
       </div>
