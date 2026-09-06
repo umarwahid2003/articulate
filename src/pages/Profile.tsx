@@ -8,6 +8,7 @@ import { calculateStreak } from '../lib/streak';
 import { LogOut, User, Bell, Shield, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ArticulateLogo } from '../components/ArticulateLogo';
+import './Profile.css';
 
 export function Profile() {
   const navigate = useNavigate();
@@ -49,15 +50,19 @@ export function Profile() {
     <Layout className="page-with-bottom-nav">
       <NavigationBar />
       
-      <div style={{ padding: '8px 20px 96px', display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '4px' }}>
+      <div className="profile-container">
         
-        {/* User Info Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.35 }}
-          style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
-        >
+        <div className="profile-desktop-grid">
+          
+          <div className="profile-left-col">
+            {/* User Info Header */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.35 }}
+              className="profile-user-card"
+              style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
+            >
           <div style={{ 
             width: '66px', 
             height: '66px', 
@@ -105,7 +110,9 @@ export function Profile() {
             <span style={{ color: 'var(--ink-secondary)', fontSize: '13px', marginTop: '4px' }}>Sessions</span>
           </div>
         </motion.div>
+      </div>
 
+      <div className="profile-right-col">
         {/* Settings List */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }} 
@@ -194,6 +201,8 @@ export function Profile() {
           </div>
         </motion.div>
         
+      </div>
+      </div>
       </div>
     </Layout>
   );

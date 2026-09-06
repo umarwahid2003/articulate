@@ -1,6 +1,7 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNavigation } from './components/BottomNavigation';
+import { DesktopSidebar } from './components/DesktopSidebar';
 import { PracticeSheet } from './components/PracticeSheet';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -55,11 +56,14 @@ const Shell = () => {
   const [isPracticeSheetOpen, setIsPracticeSheetOpen] = useState(false);
 
   return (
-    <>
-      <Outlet context={{ openPracticeSheet: () => setIsPracticeSheetOpen(true) }} />
+    <div className="app-shell">
+      <DesktopSidebar onOpenPractice={() => setIsPracticeSheetOpen(true)} />
+      <div className="app-main-viewport">
+        <Outlet context={{ openPracticeSheet: () => setIsPracticeSheetOpen(true) }} />
+      </div>
       <BottomNavigation onOpenPractice={() => setIsPracticeSheetOpen(true)} />
       <PracticeSheet isOpen={isPracticeSheetOpen} onClose={() => setIsPracticeSheetOpen(false)} />
-    </>
+    </div>
   );
 };
 

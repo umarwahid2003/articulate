@@ -15,7 +15,11 @@
 @media (min-width: 768px) {
   .grove-nav-bar {
     height: 64px;
-    margin: 0 -72px; /* Pull to screen edges on desktop */
+    margin: 0;
+  }
+
+  .grove-nav-bar--empty {
+    display: none;
   }
 }
 

@@ -10,6 +10,12 @@
   pointer-events: none; /* Allows clicking through the empty space around the pill */
 }
 
+@media (min-width: 768px) {
+  .grove-bottom-nav-wrapper {
+    display: none !important;
+  }
+}
+
 .grove-bottom-nav {
   pointer-events: auto; /* Re-enable clicks on the nav itself */
   background-color: rgba(23, 27, 25, 0.75); /* Dark theme default */

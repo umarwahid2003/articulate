@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { RefreshCw, X, ArrowRight } from 'lucide-react';
 import { TopicSuggestion, AISpeechEvaluation, UserContext } from '../types/user';
 import { motion, AnimatePresence } from 'framer-motion';
+import './Practice.css';
 
 export interface SessionRecord {
   id: string;
@@ -56,6 +57,14 @@ export const Practice = () => {
   const [evaluationError, setEvaluationError] = useState<string | null>(null);
 
   const currentTopic = topics[topicIndex] || null;
+
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (evaluationError) {
@@ -187,10 +196,10 @@ export const Practice = () => {
     <Layout className="page-with-bottom-nav" style={{ height: '100dvh', minHeight: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <NavigationBar />
       
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 84px', boxSizing: 'border-box' }}>
+      <div className="practice-container">
         
         {/* Topic / Mode — minimal inline display */}
-        <div style={{ width: '100%', maxWidth: '420px', display: 'flex', justifyContent: 'center', paddingTop: '4px' }}>
+        <div className="practice-topic-wrapper">
           {loadingTopics && !currentTopic ? (
             <motion.div 
               initial={{ opacity: 0 }}
@@ -358,28 +367,14 @@ export const Practice = () => {
               }}
             />
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 240 }}
-              style={{
-                position: 'fixed',
-                bottom: 0, left: 0, right: 0,
-                backgroundColor: 'var(--surface-base)',
-                borderTopLeftRadius: '24px',
-                borderTopRightRadius: '24px',
-                padding: '16px 20px 84px',
-                zIndex: 301,
-                maxHeight: '84vh',
-                overflowY: 'auto',
-                boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }}
+              initial={isDesktop ? { opacity: 0, scale: 0.96 } : { y: '100%' }}
+              animate={isDesktop ? { opacity: 1, scale: 1 } : { y: 0 }}
+              exit={isDesktop ? { opacity: 0, scale: 0.96 } : { y: '100%' }}
+              transition={isDesktop ? { duration: 0.2 } : { type: 'spring', damping: 28, stiffness: 240 }}
+              className="practice-eval-drawer"
             >
               {/* Drag Handle */}
-              <div style={{ width: '36px', height: '4px', backgroundColor: 'var(--border-hairline)', borderRadius: '2px', margin: '0 auto 2px' }} />
+              <div className="practice-drag-handle" />
 
               {/* Score Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

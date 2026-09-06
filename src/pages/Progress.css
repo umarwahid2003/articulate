@@ -1,0 +1,129 @@
+.progress-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 80px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.progress-desktop-kpis {
+  display: none;
+}
+
+.progress-main-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.progress-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.progress-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.progress-session-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--surface-base);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px 20px 84px;
+  z-index: 301;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.progress-drag-handle {
+  width: 40px;
+  height: 4px;
+  background-color: var(--border-hairline);
+  border-radius: 2px;
+  margin: 0 auto 12px;
+}
+
+/* Tablet & Desktop Layout (>= 768px) */
+@media (min-width: 768px) {
+  .progress-page-container {
+    padding-bottom: 40px;
+    margin-top: 24px;
+    max-width: 1080px;
+  }
+
+  .progress-desktop-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .progress-kpi-card {
+    background-color: var(--surface-raised);
+    border-radius: 20px;
+    padding: 18px 20px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .progress-kpi-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-secondary);
+    font-family: var(--font-display);
+  }
+
+  .progress-kpi-val {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ink-base);
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  .progress-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .progress-drag-handle {
+    display: none;
+  }
+
+  .progress-session-drawer {
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 600px !important;
+    border-radius: 24px !important;
+    padding: 28px 32px !important;
+    max-height: 85vh !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-subtle) !important;
+  }
+}

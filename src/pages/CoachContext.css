@@ -1,0 +1,58 @@
+.context-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 96px;
+  margin-top: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.context-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.context-topics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.context-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* Tablet & Desktop Optimizations (>= 768px) */
+@media (min-width: 768px) {
+  .context-container {
+    max-width: 1000px;
+    padding-bottom: 48px;
+    margin-top: 24px;
+  }
+
+  .context-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .context-full-width {
+    grid-column: 1 / -1;
+  }
+
+  .context-topics-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .context-time-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+}

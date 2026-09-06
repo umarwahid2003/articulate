@@ -8,11 +8,20 @@ import { UserContext } from '../types/user';
 import { calculateStreak, getUniquePracticedDays, toLocalDateString } from '../lib/streak';
 import { Check, X, Lightbulb, MessageSquare, ChevronRight, Target, Flame, Trophy, Zap, Mic, MessageCircle, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import './Progress.css';
 
 export const Progress = () => {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
+
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const loadData = () => {
@@ -114,28 +123,59 @@ export const Progress = () => {
     ];
   }, [dailyProgressPercent, currentStreak, uniquePracticedDays, dailyGoalMinutes, todayMinutes]);
 
+  const avgScore = useMemo(() => {
+    if (sessions.length === 0) return 0;
+    const sum = sessions.reduce((acc, s) => acc + (s.score || 0), 0);
+    return Math.round(sum / sessions.length);
+  }, [sessions]);
+
   return (
     <Layout className="page-with-bottom-nav">
       <NavigationBar />
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '80px', marginTop: '16px' }}>
+      <div className="progress-page-container">
         
-        {/* Top Feature Card: Daily Goal & Progress */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.4 }}
-          style={{
-            backgroundColor: 'var(--surface-raised)',
-            borderRadius: '24px',
-            padding: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-            border: '1px solid var(--border-subtle)'
-          }}
-        >
+        {/* Desktop Top KPI Stats Bar */}
+        <div className="progress-desktop-kpis">
+          <div className="progress-kpi-card">
+            <span className="progress-kpi-label">Today's Focus</span>
+            <span className="progress-kpi-val">{todayMinutes}m / {dailyGoalMinutes}m</span>
+          </div>
+          <div className="progress-kpi-card">
+            <span className="progress-kpi-label">Current Streak</span>
+            <span className="progress-kpi-val">{currentStreak} Days</span>
+          </div>
+          <div className="progress-kpi-card">
+            <span className="progress-kpi-label">Total Sessions</span>
+            <span className="progress-kpi-val">{sessions.length}</span>
+          </div>
+          <div className="progress-kpi-card">
+            <span className="progress-kpi-label">Average Score</span>
+            <span className="progress-kpi-val">{avgScore > 0 ? `${avgScore}/100` : '—'}</span>
+          </div>
+        </div>
+
+        {/* Responsive Content Grid */}
+        <div className="progress-main-grid">
+          
+          {/* Left Column: Today's Goal + Achievements */}
+          <div className="progress-left-col">
+            {/* Top Feature Card: Daily Goal & Progress */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.4 }}
+              style={{
+                backgroundColor: 'var(--surface-raised)',
+                borderRadius: '24px',
+                padding: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                border: '1px solid var(--border-subtle)'
+              }}
+            >
           <div style={{ flex: 1, paddingRight: '16px' }}>
             <span style={{ 
               fontSize: '11px', 
@@ -248,54 +288,59 @@ export const Progress = () => {
             })}
           </div>
         </motion.div>
+      </div>
 
-        {/* Interactive Session History */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', marginTop: '16px' }}>
-            <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', margin: 0 }}>
-              Session History
-            </h2>
-            <span style={{ fontSize: '12px', color: 'var(--ink-secondary)' }}>
-              Tap any session to review feedback
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {sessions.length > 0 ? (
-              sessions.slice(0, 15).map((session) => (
-                <Card 
-                  key={session.id}
-                  size="compact"
-                  title={session.topic}
-                  subtitle={formatTime(session.timestamp)}
-                  trailingMetadata={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--surface-sunken)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ width: `${session.score}%`, height: '100%', backgroundColor: 'var(--grove-moss)', borderRadius: '2px' }} />
-                      </div>
-                      <span style={{ fontWeight: 700, color: 'var(--grove-moss)', fontSize: '14px' }}>{session.score}</span>
-                      <ChevronRight size={16} color="var(--ink-secondary)" />
-                    </div>
-                  }
-                  interactive
-                  onClick={() => setSelectedSession(session)}
-                />
-              ))
-            ) : (
-              <div style={{ 
-                textAlign: 'center', 
-                padding: '40px 24px', 
-                backgroundColor: 'var(--surface-raised)', 
-                borderRadius: 'var(--radius-lg)',
-                border: '1px dashed var(--border-hairline)'
-              }}>
-                <Mic size={32} color="var(--ink-tertiary)" style={{ marginBottom: '12px' }} />
-                <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink-primary)', marginBottom: '4px' }}>No sessions yet</div>
-                <div style={{ fontSize: '14px', color: 'var(--ink-secondary)' }}>Complete your first practice to see your progress here!</div>
+          {/* Right Column: Interactive Session History */}
+          <div className="progress-right-col">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', margin: 0 }}>
+                  Session History
+                </h2>
+                <span style={{ fontSize: '12px', color: 'var(--ink-secondary)' }}>
+                  Tap any session to review feedback
+                </span>
               </div>
-            )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sessions.length > 0 ? (
+                  sessions.slice(0, 15).map((session) => (
+                    <Card 
+                      key={session.id}
+                      size="compact"
+                      title={session.topic}
+                      subtitle={formatTime(session.timestamp)}
+                      trailingMetadata={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--surface-sunken)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: `${session.score}%`, height: '100%', backgroundColor: 'var(--grove-moss)', borderRadius: '2px' }} />
+                          </div>
+                          <span style={{ fontWeight: 700, color: 'var(--grove-moss)', fontSize: '14px' }}>{session.score}</span>
+                          <ChevronRight size={16} color="var(--ink-secondary)" />
+                        </div>
+                      }
+                      interactive
+                      onClick={() => setSelectedSession(session)}
+                    />
+                  ))
+                ) : (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '40px 24px', 
+                    backgroundColor: 'var(--surface-raised)', 
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px dashed var(--border-hairline)'
+                  }}>
+                    <Mic size={32} color="var(--ink-tertiary)" style={{ marginBottom: '12px' }} />
+                    <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink-primary)', marginBottom: '4px' }}>No sessions yet</div>
+                    <div style={{ fontSize: '14px', color: 'var(--ink-secondary)' }}>Complete your first practice to see your progress here!</div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
+
+        </div>
       </div>
 
       {/* Historical Session Review Modal / Bottom Sheet */}
@@ -316,27 +361,13 @@ export const Progress = () => {
               }}
             />
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-              style={{
-                position: 'fixed',
-                bottom: 0, left: 0, right: 0,
-                backgroundColor: 'var(--surface-base)',
-                borderTopLeftRadius: '24px',
-                borderTopRightRadius: '24px',
-                padding: '24px 20px 84px',
-                zIndex: 301,
-                maxHeight: '80vh',
-                overflowY: 'auto',
-                boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.25)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px'
-              }}
+              initial={isDesktop ? { opacity: 0, scale: 0.96 } : { y: '100%' }}
+              animate={isDesktop ? { opacity: 1, scale: 1 } : { y: 0 }}
+              exit={isDesktop ? { opacity: 0, scale: 0.96 } : { y: '100%' }}
+              transition={isDesktop ? { duration: 0.2 } : { type: 'spring', damping: 26, stiffness: 220 }}
+              className="progress-session-drawer"
             >
-              <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border-hairline)', borderRadius: '2px', margin: '0 auto 12px' }} />
+              <div className="progress-drag-handle" />
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>

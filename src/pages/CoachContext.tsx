@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
+import './CoachContext.css';
 
 const GOALS = [
   { id: 'interview', label: 'Job Interviews & Career', icon: Briefcase, desc: 'Ace behavioral & technical interviews' },
@@ -125,7 +126,7 @@ export const CoachContext = () => {
     <Layout className="page-with-bottom-nav">
       <NavigationBar />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '120px', marginTop: '12px' }}>
+      <div className="context-container">
         
         {/* Transparency Context Summary */}
         <div style={{ 
@@ -146,18 +147,21 @@ export const CoachContext = () => {
             </div>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--ink-secondary)', lineHeight: 1.45 }}>
-            Grove AI uses these preferences to suggest personalized topics and calibrate your speaking sessions.
+            Articulate AI uses these preferences to suggest personalized topics and calibrate your speaking sessions.
           </p>
         </div>
 
-        {/* 1. Main Speaking Goal */}
-        <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h4 style={{ fontSize: '16px', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--ink-base)' }}>
-              1. Speaking Goal
-            </h4>
-            <span style={{ fontSize: '12px', color: 'var(--grove-moss)', fontWeight: 600 }}>Active</span>
-          </div>
+        {/* Responsive Cards Grid */}
+        <div className="context-cards-grid">
+
+          {/* 1. Main Speaking Goal */}
+          <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h4 style={{ fontSize: '16px', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--ink-base)' }}>
+                1. Speaking Goal
+              </h4>
+              <span style={{ fontSize: '12px', color: 'var(--grove-moss)', fontWeight: 600 }}>Active</span>
+            </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {GOALS.map((goal) => {
@@ -256,7 +260,7 @@ export const CoachContext = () => {
         </div>
 
         {/* 3. Topics & Interests */}
-        <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="context-full-width" style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <h4 style={{ fontSize: '16px', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--ink-base)' }}>
               3. Topics of Interest
@@ -266,7 +270,7 @@ export const CoachContext = () => {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+          <div className="context-topics-grid">
             {TOPICS.map((topic) => {
               const Icon = topic.icon;
               const isSelected = selectedInterests.includes(topic.label);
@@ -310,7 +314,7 @@ export const CoachContext = () => {
         </div>
 
         {/* 4. Daily Practice Goal (Minutes) */}
-        <div style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="context-full-width" style={{ backgroundColor: 'var(--surface-raised)', borderRadius: '24px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <h4 style={{ fontSize: '16px', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--ink-base)' }}>
               4. Daily Goal in Minutes
@@ -318,7 +322,7 @@ export const CoachContext = () => {
             <span style={{ fontSize: '12px', color: 'var(--grove-moss)', fontWeight: 600 }}>{selectedTimeGoal} min/day</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+          <div className="context-time-grid">
             {TIME_GOALS.map((t) => {
               const isSelected = selectedTimeGoal === t.minutes;
               return (
@@ -351,6 +355,8 @@ export const CoachContext = () => {
               );
             })}
           </div>
+        </div>
+
         </div>
 
         {/* Dynamic Glowing Save Button */}

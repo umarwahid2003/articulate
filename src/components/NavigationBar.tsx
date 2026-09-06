@@ -32,8 +32,13 @@ export const NavigationBar = ({ title, showBack = false, onBack, trailingActions
     }
   };
 
+  const isEmpty = !showBack && !title && (!trailingActions || trailingActions.length === 0);
+
   return (
-    <header className={clsx('grove-nav-bar', { 'grove-nav-bar--scrolled': isScrolled })}>
+    <header className={clsx('grove-nav-bar', { 
+      'grove-nav-bar--scrolled': isScrolled,
+      'grove-nav-bar--empty': isEmpty
+    })}>
       <div className="grove-nav-bar__container">
         <div className="grove-nav-bar__leading">
           {showBack && (

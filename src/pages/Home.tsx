@@ -9,6 +9,8 @@ import { SessionRecord } from './Practice';
 import { calculateStreak, hasPracticedToday, toLocalDateString } from '../lib/streak';
 import { motion } from 'framer-motion';
 
+import './Home.css';
+
 export function Home() {
   const { openPracticeSheet } = useOutletContext<{ openPracticeSheet: () => void }>();
   const { profile, user } = useAuth();
@@ -70,6 +72,11 @@ export function Home() {
   const streak = useMemo(() => calculateStreak(sessions), [sessions]);
   const isPracticedToday = useMemo(() => hasPracticedToday(sessions), [sessions]);
 
+  const totalMinutes = useMemo(() => {
+    const totalSecs = sessions.reduce((acc, s) => acc + (s.durationSeconds || 60), 0);
+    return Math.round(totalSecs / 60);
+  }, [sessions]);
+
   const greeting = useMemo(() => {
     let name = profile?.first_name;
     if (!name && user?.user_metadata) {
@@ -85,23 +92,14 @@ export function Home() {
     <Layout className="page-with-bottom-nav">
       <NavigationBar />
       
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        flex: 1, 
-        justifyContent: 'center', 
-        paddingBottom: '96px', 
-        maxWidth: '480px', 
-        width: '100%', 
-        margin: '0 auto' 
-      }}>
+      <div className="home-container">
         
         {/* Header Greeting */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          style={{ textAlign: 'center', marginTop: 0, marginBottom: '32px' }}
+          className="home-header"
         >
           <h1 style={{ 
             fontSize: '48px', 
@@ -120,84 +118,112 @@ export function Home() {
           </p>
         </motion.div>
 
-        {/* Weekly Habit Tracker with matching border and shadow */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          style={{ 
-            backgroundColor: 'var(--surface-raised)', 
-            borderRadius: '24px', 
-            padding: '22px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.08)',
-            marginBottom: '24px'
-          }}
-        >
-          <h3 style={{ fontSize: '17px', fontFamily: 'var(--font-display)', margin: '0 0 16px 0', color: 'var(--ink-base)' }}>
-            Weekly Growth
-          </h3>
+        {/* Responsive Content Grid */}
+        <div className="home-grid">
           
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            {weekDays.map((day, i) => {
-              const isFilled = day.hasPracticed;
-              const isCurrentDay = day.isToday;
-
-              return (
-                <div 
-                  key={i} 
-                  style={{
-                    width: '38px', 
-                    height: '38px', 
-                    borderRadius: '19px', 
-                    backgroundColor: isFilled ? 'var(--grove-moss)' : 'var(--surface-sunken)',
-                    color: isFilled ? '#ffffff' : 'var(--ink-secondary)',
-                    border: !isFilled && isCurrentDay ? '2px solid var(--grove-moss)' : 'none',
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    fontSize: '14px', 
-                    fontWeight: 700,
-                    boxShadow: isFilled ? '0 2px 8px rgba(31, 122, 108, 0.25)' : 'none',
-                    transition: 'all 0.2s ease',
-                    animation: (!isFilled && isCurrentDay) ? 'pulse 2s ease-in-out infinite' : 'none'
-                  }}
-                  title={isFilled ? `Practiced on ${day.label}` : isCurrentDay ? 'Practice today!' : day.label}
-                >
-                  {isFilled ? <Check size={16} strokeWidth={3} /> : day.label}
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Main Action Button with perfectly aligned mic icon */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          style={{ marginBottom: '32px' }}
-        >
-          <Button 
-            variant="primary" 
-            size="large"
-            leadingIcon={<Mic size={21} />}
-            style={{ 
-              width: '100%', 
-              fontSize: '20px', 
-              fontFamily: 'var(--font-display)',
-              letterSpacing: '-0.02em',
-              height: '64px',
-              color: '#ffffff',
-              borderRadius: '20px', 
-              fontWeight: 600,
-              boxShadow: '0 10px 28px rgba(31, 122, 108, 0.28)'
-            }}
-            onClick={() => openPracticeSheet()}
+          {/* Weekly Habit Tracker */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="home-growth-card"
           >
-            Start Practice
-          </Button>
-        </motion.div>
+            <div>
+              <h3 style={{ fontSize: '17px', fontFamily: 'var(--font-display)', margin: '0 0 16px 0', color: 'var(--ink-base)' }}>
+                Weekly Growth
+              </h3>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                {weekDays.map((day, i) => {
+                  const isFilled = day.hasPracticed;
+                  const isCurrentDay = day.isToday;
+
+                  return (
+                    <div 
+                      key={i} 
+                      style={{
+                        width: '38px', 
+                        height: '38px', 
+                        borderRadius: '19px', 
+                        backgroundColor: isFilled ? 'var(--grove-moss)' : 'var(--surface-sunken)',
+                        color: isFilled ? '#ffffff' : 'var(--ink-secondary)',
+                        border: !isFilled && isCurrentDay ? '2px solid var(--grove-moss)' : 'none',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontSize: '14px', 
+                        fontWeight: 700,
+                        boxShadow: isFilled ? '0 2px 8px rgba(31, 122, 108, 0.25)' : 'none',
+                        transition: 'all 0.2s ease',
+                        animation: (!isFilled && isCurrentDay) ? 'pulse 2s ease-in-out infinite' : 'none'
+                      }}
+                      title={isFilled ? `Practiced on ${day.label}` : isCurrentDay ? 'Practice today!' : day.label}
+                    >
+                      {isFilled ? <Check size={16} strokeWidth={3} /> : day.label}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Desktop Stats Summary */}
+            <div className="home-desktop-stats">
+              <div className="home-desktop-stat-pill">
+                <span className="home-desktop-stat-label">Total Sessions</span>
+                <span className="home-desktop-stat-val">{sessions.length}</span>
+              </div>
+              <div className="home-desktop-stat-pill">
+                <span className="home-desktop-stat-label">Practice Time</span>
+                <span className="home-desktop-stat-val">{totalMinutes} min</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Main Action Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="home-action-card"
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              <span style={{ 
+                fontSize: '12px', 
+                fontWeight: 600, 
+                letterSpacing: '0.05em', 
+                textTransform: 'uppercase', 
+                color: 'var(--grove-moss)',
+                fontFamily: 'var(--font-display)' 
+              }}>
+                Daily Speech Routine
+              </span>
+              <p style={{ margin: 0, fontSize: '15px', color: 'var(--ink-secondary)', lineHeight: 1.45, fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                "Speaking is a physical habit. A few minutes of deliberate speech each day builds lasting clarity."
+              </p>
+            </div>
+
+            <Button 
+              variant="primary" 
+              size="large"
+              leadingIcon={<Mic size={21} />}
+              style={{ 
+                width: '100%', 
+                fontSize: '20px', 
+                fontFamily: 'var(--font-display)',
+                letterSpacing: '-0.02em',
+                height: '64px',
+                color: '#ffffff',
+                borderRadius: '20px', 
+                fontWeight: 600,
+                boxShadow: '0 10px 28px rgba(31, 122, 108, 0.28)'
+              }}
+              onClick={() => openPracticeSheet()}
+            >
+              Start Practice
+            </Button>
+          </motion.div>
+
+        </div>
 
       </div>
     </Layout>

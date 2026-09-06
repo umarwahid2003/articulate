@@ -1,3 +1,18 @@
+.app-shell {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  background-color: var(--surface-base);
+}
+
+.app-main-viewport {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .grove-layout {
   width: 100%;
   margin: 0 auto;
@@ -6,12 +21,25 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
-/* Desktop override: 12 columns equivalent padding */
+/* Desktop layout optimizations (>= 768px) */
 @media (min-width: 768px) {
+  .app-main-viewport {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+  }
+
   .grove-layout {
-    padding: 0 72px;
-    max-width: 1200px;
+    padding: 0 48px 48px;
+    max-width: 1160px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .grove-layout {
+    padding: 0 64px 56px;
+    max-width: 1240px;
   }
 }
