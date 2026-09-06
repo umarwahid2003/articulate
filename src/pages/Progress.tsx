@@ -161,56 +161,66 @@ export const Progress = () => {
           {/* Left Column: Today's Goal + Achievements */}
           <div className="progress-left-col">
             {/* Top Feature Card: Daily Goal & Progress */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ duration: 0.4 }}
-              style={{
-                backgroundColor: 'var(--surface-raised)',
-                borderRadius: '24px',
-                padding: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-          <div style={{ flex: 1, paddingRight: '16px' }}>
-            <span style={{ 
-              fontSize: '11px', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.08em', 
-              color: 'var(--grove-moss)', 
-              fontWeight: 800,
-              display: 'inline-block',
-              marginBottom: '6px'
-            }}>
-              Today's Practice
-            </span>
-            <h2 style={{ fontSize: '28px', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>
-              {dailyProgressPercent >= 100 
-                ? "Daily Goal Met!" 
-                : `${todayMinutes} / ${dailyGoalMinutes} mins`}
-            </h2>
-            <p style={{ color: 'var(--ink-secondary)', fontSize: '15px', lineHeight: 1.4 }}>
-              {dailyProgressPercent >= 100 
-                ? `You reached your ${dailyGoalMinutes} min daily speaking goal today!`
-                : dailyProgressPercent > 0 
-                ? `${Math.max(0, Math.round((dailyGoalMinutes - todayMinutes) * 10) / 10)} mins remaining to hit today's goal.`
-                : `Complete a session today toward your ${dailyGoalMinutes} min daily goal.`}
-            </p>
-          </div>
-          <ProgressRing progress={dailyProgressPercent} size="large">
-            {dailyProgressPercent}%
-          </ProgressRing>
-        </motion.div>
+            <div>
+              <div className="progress-goal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', margin: 0 }}>
+                  Today's Practice
+                </h2>
+                <span style={{ fontSize: '12px', color: 'var(--ink-secondary)' }}>
+                  {dailyProgressPercent >= 100 ? 'Goal met' : `${dailyGoalMinutes} min goal`}
+                </span>
+              </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ duration: 0.4 }}
+                style={{
+                  backgroundColor: 'var(--surface-raised)',
+                  borderRadius: '24px',
+                  padding: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                  border: '1px solid var(--border-subtle)'
+                }}
+              >
+                <div style={{ flex: 1, paddingRight: '16px' }}>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.08em', 
+                    color: 'var(--grove-moss)', 
+                    fontWeight: 800,
+                    display: 'inline-block',
+                    marginBottom: '6px'
+                  }}>
+                    Daily Target
+                  </span>
+                  <h2 style={{ fontSize: '28px', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>
+                    {dailyProgressPercent >= 100 
+                      ? "Daily Goal Met!" 
+                      : `${todayMinutes} / ${dailyGoalMinutes} mins`}
+                  </h2>
+                  <p style={{ color: 'var(--ink-secondary)', fontSize: '15px', lineHeight: 1.4 }}>
+                    {dailyProgressPercent >= 100 
+                      ? `You reached your ${dailyGoalMinutes} min daily speaking goal today!`
+                      : dailyProgressPercent > 0 
+                      ? `${Math.max(0, Math.round((dailyGoalMinutes - todayMinutes) * 10) / 10)} mins remaining to hit today's goal.`
+                      : `Complete a session today toward your ${dailyGoalMinutes} min daily goal.`}
+                  </p>
+                </div>
+                <ProgressRing progress={dailyProgressPercent} size="large">
+                  {dailyProgressPercent}%
+                </ProgressRing>
+              </motion.div>
+            </div>
 
-        {/* 3 Core Achievements with Theme-Matched Icons */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-          <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', marginBottom: '16px', marginTop: '16px' }}>
-            Achievements
-          </h2>
+            {/* 3 Core Achievements with Theme-Matched Icons */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+              <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', margin: '0 0 16px 0' }}>
+                Achievements
+              </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             {achievements.map((ach) => {
               const Icon = ach.icon;
