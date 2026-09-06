@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, Mic, Target } from 'lucide-react';
 import { Card } from './Card';
+import './PracticeSheet.css';
 
 interface PracticeSheetProps {
   isOpen: boolean;
@@ -11,6 +12,14 @@ interface PracticeSheetProps {
 
 export const PracticeSheet = ({ isOpen, onClose }: PracticeSheetProps) => {
   const navigate = useNavigate();
+
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSelectOption = (path: string, state?: any) => {
     onClose();
@@ -26,33 +35,16 @@ export const PracticeSheet = ({ isOpen, onClose }: PracticeSheetProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{
-              position: 'fixed',
-              top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 200
-            }}
+            className="practice-sheet-overlay"
           />
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            style={{
-              position: 'fixed',
-              bottom: 0, left: 0, right: 0,
-              backgroundColor: 'var(--surface-raised)',
-              borderTopLeftRadius: '24px',
-              borderTopRightRadius: '24px',
-              padding: '32px 24px 80px',
-              zIndex: 201,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}
+            initial={isDesktop ? { opacity: 0, scale: 0.95 } : { y: '100%' }}
+            animate={isDesktop ? { opacity: 1, scale: 1 } : { y: 0 }}
+            exit={isDesktop ? { opacity: 0, scale: 0.95 } : { y: '100%' }}
+            transition={isDesktop ? { duration: 0.2 } : { type: 'spring', damping: 25, stiffness: 200 }}
+            className="practice-sheet-container"
           >
-            <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border-hairline)', borderRadius: '2px', margin: '0 auto 16px' }} />
+            <div className="practice-sheet-handle" />
             
             <h3 style={{ fontSize: '22px', fontFamily: 'var(--font-display)', marginBottom: '16px', textAlign: 'center' }}>
               How would you like to practice?
@@ -61,7 +53,7 @@ export const PracticeSheet = ({ isOpen, onClose }: PracticeSheetProps) => {
             <Card 
               size="standard"
               title="Suggest a Topic"
-              subtitle="Let Grove AI generate a tailored topic and start speaking right away."
+              subtitle="Let Articulate AI generate a tailored topic and start speaking right away."
               interactive
               onClick={() => handleSelectOption('/practice', { autoSuggest: true })}
               media={

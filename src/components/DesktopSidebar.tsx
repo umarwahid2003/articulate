@@ -84,6 +84,12 @@ export const DesktopSidebar = ({ onOpenPractice }: DesktopSidebarProps) => {
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={(e) => {
+                  if (item.to === '/practice' && onOpenPractice) {
+                    e.preventDefault();
+                    onOpenPractice();
+                  }
+                }}
                 className={({ isActive: active }) => 
                   `desktop-sidebar__link ${active ? 'desktop-sidebar__link--active' : ''}`
                 }
