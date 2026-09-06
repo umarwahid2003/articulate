@@ -15,14 +15,65 @@
   width: 100%;
 }
 
-.profile-left-col {
+.profile-desktop-header {
+  display: none;
+}
+
+.profile-settings-header {
+  font-size: 18px;
+  font-family: var(--font-display);
+  color: var(--ink-base);
+  margin: 0 0 4px 0;
+  padding-left: 8px;
+}
+
+.profile-left-cards {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 
-.profile-right-col {
+.profile-user-card {
+  background-color: var(--surface-raised);
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.profile-stats-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.profile-stat-card {
+  flex: 1;
+  background-color: var(--surface-raised);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  box-sizing: border-box;
+}
+
+.profile-settings-card {
+  background-color: var(--surface-raised);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.profile-right-actions {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -32,23 +83,59 @@
 /* Tablet & Desktop Optimizations (>= 768px) */
 @media (min-width: 768px) {
   .profile-container {
-    max-width: 920px;
+    max-width: 960px;
     padding: 24px 0 48px;
     margin-top: 16px;
   }
 
   .profile-desktop-grid {
     display: grid;
-    grid-template-columns: 0.9fr 1.1fr;
-    gap: 28px;
-    align-items: flex-start;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+    row-gap: 16px;
+    align-items: stretch;
   }
 
-  .profile-user-card {
-    background-color: var(--surface-raised);
-    border-radius: 24px;
-    padding: 24px;
-    border: 1px solid var(--border-subtle);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  .profile-desktop-header {
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 18px;
+    font-family: var(--font-display);
+    color: var(--ink-base);
+    margin: 0;
+    padding-left: 8px;
+    line-height: 24px;
+  }
+
+  .profile-settings-header {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    padding-left: 8px;
+    line-height: 24px;
+  }
+
+  .profile-left-cards {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .profile-settings-card {
+    grid-column: 2;
+    grid-row: 2;
+    box-sizing: border-box;
+  }
+
+  .profile-right-actions {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 0;
   }
 }
+
