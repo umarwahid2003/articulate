@@ -7,7 +7,7 @@ import { processSpeechWithAI, generatePersonalizedTopics, isMeaningfulSpeech, Me
 import { calculateStreak } from '../lib/streak';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { RefreshCw, X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 import { TopicSuggestion, AISpeechEvaluation, UserContext } from '../types/user';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Practice.css';
@@ -38,6 +38,157 @@ export interface SessionRecord {
   pacingNote?: string;
   durationSeconds: number;
 }
+
+const TOPIC_LOADING_PHRASES = [
+  "Curating your prompt...",
+  "Aligning with speaking goals...",
+  "Crafting a tailored scenario...",
+  "Polishing your topic..."
+];
+
+const TopicFindingLoader: React.FC = () => {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIndex(prev => (prev + 1) % TOPIC_LOADING_PHRASES.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <motion.div
+      key="topic-loader-box"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96, y: -4 }}
+      transition={{ duration: 0.22 }}
+      style={{
+        width: '100%',
+        maxWidth: '440px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '4px 0',
+        pointerEvents: 'none'
+      }}
+    >
+      {/* Sleek Pill Capsule with Harmonic Equalizer & Dynamic Phrasing */}
+      <motion.div
+        animate={{
+          boxShadow: [
+            '0 0 0 0 rgba(47, 75, 60, 0)',
+            '0 0 0 4px rgba(47, 75, 60, 0.05)',
+            '0 0 0 0 rgba(47, 75, 60, 0)'
+          ]
+        }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '9px',
+          padding: '5px 14px 5px 11px',
+          borderRadius: '999px',
+          backgroundColor: 'rgba(47, 75, 60, 0.05)',
+          border: '1px solid rgba(47, 75, 60, 0.13)',
+          marginBottom: '10px'
+        }}
+      >
+        {/* Harmonic 5-bar voice resonance equalizer */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5px', height: '14px' }}>
+          {[0.45, 0.95, 0.6, 1.0, 0.5].map((scale, idx) => (
+            <motion.span
+              key={idx}
+              animate={{
+                scaleY: [0.3, scale, 0.35, scale * 0.85, 0.3],
+                opacity: [0.35, 0.95, 0.45, 0.85, 0.35]
+              }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: idx * 0.15
+              }}
+              style={{
+                width: '2px',
+                height: '14px',
+                borderRadius: '999px',
+                backgroundColor: 'var(--moss-base, #2F4B3C)',
+                transformOrigin: 'center',
+                display: 'inline-block'
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Dynamic cycling phrase with smooth vertical slide + fade */}
+        <div style={{ minWidth: '175px', textAlign: 'left', overflow: 'hidden', height: '18px', display: 'flex', alignItems: 'center' }}>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={phraseIndex}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                fontSize: '12px',
+                fontWeight: 500,
+                color: 'var(--ink-secondary)',
+                fontFamily: 'var(--font-body)',
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {TOPIC_LOADING_PHRASES[phraseIndex]}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Shimmering Skeleton Topic Preview */}
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
+        {/* Category placeholder */}
+        <motion.div
+          animate={{ opacity: [0.25, 0.55, 0.25] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            width: '76px',
+            height: '10px',
+            borderRadius: '999px',
+            backgroundColor: 'rgba(47, 75, 60, 0.12)'
+          }}
+        />
+
+        {/* Title placeholder */}
+        <motion.div
+          animate={{ opacity: [0.3, 0.65, 0.3] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
+          style={{
+            width: '240px',
+            maxWidth: '82%',
+            height: '18px',
+            borderRadius: '6px',
+            backgroundColor: 'rgba(26, 26, 26, 0.08)'
+          }}
+        />
+
+        {/* Description placeholder */}
+        <motion.div
+          animate={{ opacity: [0.18, 0.4, 0.18] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+          style={{
+            width: '180px',
+            maxWidth: '65%',
+            height: '12px',
+            borderRadius: '4px',
+            backgroundColor: 'rgba(26, 26, 26, 0.05)'
+          }}
+        />
+      </div>
+    </motion.div>
+  );
+};
 
 export const Practice = () => {
   const location = useLocation();
@@ -200,19 +351,10 @@ export const Practice = () => {
         
         {/* Topic / Mode — minimal inline display */}
         <div className="practice-topic-wrapper">
-          {loadingTopics && !currentTopic ? (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}
-            >
-              <RefreshCw size={13} className="grove-spin" color="var(--ink-secondary)" />
-              <span style={{ fontSize: '14px', color: 'var(--ink-secondary)', fontFamily: 'var(--font-body)' }}>
-                Finding a topic...
-              </span>
-            </motion.div>
-          ) : currentTopic ? (
-            <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait">
+            {loadingTopics && !currentTopic ? (
+              <TopicFindingLoader key="topic-loading" />
+            ) : currentTopic ? (
               <motion.div 
                 key={currentTopic.title}
                 initial={{ opacity: 0, y: 6 }}
@@ -309,11 +451,13 @@ export const Practice = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px',
-                      cursor: 'pointer',
-                      padding: 0
+                      cursor: loadingTopics ? 'not-allowed' : 'pointer',
+                      padding: 0,
+                      opacity: loadingTopics ? 0.6 : 1,
+                      transition: 'opacity 0.2s'
                     }}
                   >
-                    <span>Skip</span>
+                    <span>{loadingTopics ? 'Finding...' : 'Skip'}</span>
                     <ArrowRight size={12} />
                   </button>
 
@@ -336,46 +480,49 @@ export const Practice = () => {
                   </button>
                 </div>
               </motion.div>
-            </AnimatePresence>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '6px 0'
-              }}
-            >
-              <span style={{ 
-                fontSize: '14px', 
-                color: 'var(--ink-secondary)', 
-                fontFamily: 'var(--font-body)' 
-              }}>
-                Speak freely
-              </span>
-
-              <button
-                onClick={() => fetchTopics(true)}
-                disabled={loadingTopics}
+            ) : (
+              <motion.div
+                key="free-form"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--grove-moss)',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  fontFamily: 'var(--font-body)',
-                  cursor: loadingTopics ? 'not-allowed' : 'pointer',
-                  padding: 0,
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '6px 0'
                 }}
               >
-                {loadingTopics ? 'Loading...' : 'Get a topic'}
-              </button>
-            </motion.div>
-          )}
+                <span style={{ 
+                  fontSize: '14px', 
+                  color: 'var(--ink-secondary)', 
+                  fontFamily: 'var(--font-body)' 
+                }}>
+                  Speak freely
+                </span>
+
+                <button
+                  onClick={() => fetchTopics(true)}
+                  disabled={loadingTopics}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--grove-moss)',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    fontFamily: 'var(--font-body)',
+                    cursor: loadingTopics ? 'not-allowed' : 'pointer',
+                    padding: 0,
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px'
+                  }}
+                >
+                  {loadingTopics ? 'Finding...' : 'Get a topic'}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Voice Interface */}

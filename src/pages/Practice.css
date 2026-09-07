@@ -12,7 +12,10 @@
 .practice-topic-wrapper {
   width: 100%;
   max-width: 420px;
+  min-height: 96px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   padding-top: 4px;
 }
@@ -55,6 +58,7 @@
 
   .practice-topic-wrapper {
     max-width: 600px;
+    min-height: 104px;
     padding-top: 12px;
   }
 
