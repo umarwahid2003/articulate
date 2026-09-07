@@ -66,15 +66,10 @@ export function calculateStreak(sessions: Array<{ timestamp?: string }>): number
   // Otherwise, start counting from yesterday backward.
   const checkDate = new Date(practicedToday ? today : yesterday);
 
-  while (true) {
-    const checkStr = toLocalDateString(checkDate);
-    if (practicedDates.has(checkStr)) {
-      streak++;
-      // Move back 1 calendar day
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else {
-      break;
-    }
+  while (practicedDates.has(toLocalDateString(checkDate))) {
+    streak++;
+    // Move back 1 calendar day
+    checkDate.setDate(checkDate.getDate() - 1);
   }
 
   return streak;

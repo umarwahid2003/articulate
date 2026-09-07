@@ -264,6 +264,7 @@ export const Practice = () => {
     if (autoSuggest) {
       fetchTopics(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSuggest]);
 
   const handleShuffleTopic = (e: React.MouseEvent) => {

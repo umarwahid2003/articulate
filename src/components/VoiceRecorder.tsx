@@ -60,7 +60,7 @@ export const VoiceRecorder = ({
         animFrameRef.current = null;
       }
       if (audioContextRef.current) {
-        try { audioContextRef.current.close(); } catch (e) {}
+        try { audioContextRef.current.close(); } catch (e) { void e; }
         audioContextRef.current = null;
       }
       if (mediaStreamRef.current) {
@@ -68,7 +68,7 @@ export const VoiceRecorder = ({
         mediaStreamRef.current = null;
       }
       if (webRecognitionRef.current) {
-        try { webRecognitionRef.current.stop(); } catch (e) {}
+        try { webRecognitionRef.current.stop(); } catch (e) { void e; }
         webRecognitionRef.current = null;
       }
     };
@@ -169,7 +169,9 @@ export const VoiceRecorder = ({
     if (audioContextRef.current) {
       try {
         audioContextRef.current.close();
-      } catch (e) {}
+      } catch (e) {
+        void e;
+      }
       audioContextRef.current = null;
     }
     setAudioLevels([0.15, 0.2, 0.3, 0.2, 0.15]);
@@ -186,7 +188,9 @@ export const VoiceRecorder = ({
       try {
         rec.onend = null;
         rec.stop();
-      } catch (e) {}
+      } catch (e) {
+        void e;
+      }
     }
 
     if (Capacitor.isNativePlatform()) {
@@ -359,7 +363,9 @@ export const VoiceRecorder = ({
               }
               try {
                 recognition.start();
-              } catch (e) {}
+              } catch (e) {
+                void e;
+              }
             }
           };
 

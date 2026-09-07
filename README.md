@@ -1,32 +1,70 @@
-# Articulate 🎙️🌿
+# Articulate
 
-**Articulate** is an AI-powered conversational English fluency coach designed to build speaking confidence through zero-scroll, micro-habit daily practice sessions, instant native speech evaluation, and structured linguistic feedback.
+> **The Deliberate Speech & Fluency Studio**  
+> An AI-powered spoken English coach designed to bridge the "articulacy chasm" through low-friction daily practice, real-time voice capture, multi-archetype scenario simulation, and deep linguistic feedback.
 
----
-
-## ✨ Features
-
-- **Personalized Context Engine:** Calibrates speech evaluations and conversational prompts to your exact speaking goal (Job Interviews, IELTS, Casual, Presentations), current fluency level, and personal interests.
-- **Micro-Habit Daily Goals:** Set customized daily practice goals in minutes (2m, 5m, 10m, 15m) with a dynamic progress ring tracking today's progress.
-- **Precision Speech Evaluation:** Powered by Google Gemini 3.6 Flash JSON structured evaluations for fluency, grammar, vocabulary, and confidence sub-scores.
-- **Specific Linguistic Upgrades:** Highlights precise sentences spoken, alongside native-speaker alternatives and concise grammatical rationales.
-- **Session History & Review:** Complete archive of past speaking sessions with detailed interactive review sheets.
-- **Milestone Achievements:** Track your Daily Goal, Weekly Streak, and Monthly Streak.
-- **Minimalist Design & Interactive 3D Mascot:** Zero-scroll UI with smooth Three.js procedural mascot and dark-mode native styling.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/umarwahid2003/articulate)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.2-61dafb.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)](https://vitejs.dev/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
-## 🛠️ Tech Stack
+## Overview
 
-- **Frontend:** React 18, TypeScript, Vite 5, Framer Motion, Lucide Icons
-- **3D Engine:** Three.js
-- **AI Backend:** Google Gemini API (`gemini-3.6-flash`)
-- **Backend / Database:** Supabase (Auth, Profiles, Progress)
-- **Mobile Runtime:** Capacitor 8 (iOS & Android ready)
+Over 1.5 billion people understand English, yet millions of talented engineers, researchers, and global professionals face a career ceiling: they read and write fluently, but when placed under spontaneous speaking pressure (job interviews, executive meetings, architectural debates), they freeze, ramble, or default to simplistic phrasing.
+
+**Articulate** is built on the premise that speaking is a physical and cognitive reflex—not a multiple-choice drill. In just 3 to 5 minutes a day, users engage in private, unscripted spoken practice against tailored scenarios, receiving immediate objective scoring and surgical before-and-after sentence upgrades.
 
 ---
 
-## 🚀 Getting Started
+## Key Capabilities
+
+- **Deep Student Context Matrix:** Customizes scenarios based on:
+  - **Field & Profession:** Software & Engineering, Business & Leadership, Creative, Healthcare, Law & Policy, Academic.
+  - **Primary Speaking Hurdle:** Freezing on the spot, rambling, vocabulary bottlenecks, executive presence, textbook stiffness.
+  - **Desired Speaking Vibe:** Executive & Decisive, Charismatic & Magnetic, Intellectual & Nuanced, Casual & Conversational.
+  - **Custom Niche Keywords:** AI & ML, Venture Capital, Distributed Systems, Product Strategy, etc.
+- **5 Dynamic Conversational Archetypes:** Prevents repetitive drills by enforcing variety:
+  1. *Roleplay* — High-stakes workplace and interview simulations.
+  2. *Dilemma* — Ethical, technical, or strategic trade-offs with no easy answer.
+  3. *Debate* — Defending or dismantling controversial viewpoints.
+  4. *Storytelling* — Formative personal narratives and reflections.
+  5. *Prediction* — Visionary forecasting and structured persuasive pitches.
+- **Harmonic Voice Resonance Visualizer:** Custom Web Audio API frequency analysis computing real-time acoustic energy with smooth harmonic equalizers.
+- **Precision Speech Evaluation:** Instant breakdown of:
+  - Overall Performance Score (0–100)
+  - Fluency, Grammar, Vocabulary, and Confidence sub-scores
+  - Speaking Pace (Words Per Minute) & Crutch Filler Word detection (`um`, `uh`, `like`, `basically`)
+  - Sentence-by-sentence before-and-after corrections with linguistic rationales
+  - Conversational follow-up questions to continue deliberate practice
+- **Minimalist Editorial Design:** Zero-distraction UI styled with warm paper surfaces, Grove Moss accents (`#2F4B3C`), and Georgia serif typography.
+- **Responsive Architecture:** Optimized for both mobile viewports and spacious 2-column desktop workspaces.
+- **Progress Tracking & Daily Habits:** Dynamic SVG progress rings, weekly streak tracking, and archived session review history.
+
+---
+
+## Tech Stack
+
+| Domain | Technology |
+| :--- | :--- |
+| **Frontend Framework** | React 18, TypeScript, Vite 5 |
+| **Routing & State** | React Router v6, React Context API |
+| **Styling & Animations** | Custom CSS Design Tokens (`theme.css`), Framer Motion, Lucide Icons |
+| **AI LLM Inference** | Primary: Groq API (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`) • Fallback: Google Gemini (`gemini-3.6-flash`) |
+| **Speech Pipeline** | Web Speech API (streaming recognition) + Web Audio API `AnalyserNode` (frequency analysis) |
+| **Backend & Auth** | Supabase (Authentication, Profiles, Session History with offline fallback) |
+| **Mobile Runtime** | Capacitor 8 (iOS & Android cross-platform packaging) |
+| **Deployment** | Vercel (SPA routing configuration via `vercel.json`) |
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or pnpm
 
 ### 1. Clone the repository
 ```bash
@@ -40,39 +78,61 @@ npm install
 ```
 
 ### 3. Configure environment variables
-Create a `.env.local` file in the root directory:
+Copy the template file to `.env.local`:
+```bash
+cp .env.example .env.local
+```
+
+Fill in your API keys in `.env.local`:
 ```env
+# Groq API (Inference & Speech Evaluation)
+VITE_GROQ_API_KEY=your_groq_api_key_here
+
+# Google Gemini API (Fallback)
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
-VITE_SUPABASE_URL=your_supabase_url_here
+
+# Supabase (Authentication & Persistence)
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
+*(Note: If Supabase is unconfigured, the app automatically runs in resilient local-storage mode).*
 
 ### 4. Run development server
 ```bash
 npm run dev
 ```
 
-### 5. Build for production
+### 5. Verify build & linting
 ```bash
+npm run lint
 npm run build
 ```
 
 ---
 
-## 📱 Mobile Build (Capacitor)
+## Mobile Build (Capacitor)
+
+Articulate includes Capacitor 8 configuration for native mobile packaging:
 
 ```bash
-# Sync web build to native platforms
+# Sync web build to native platform folders
 npx cap sync
 
-# Open Android Studio
+# Open in Android Studio
 npx cap open android
 
-# Open Xcode (macOS)
+# Open in Xcode (macOS)
 npx cap open ios
 ```
 
 ---
 
-## 📄 License
-MIT License
+## Security & Secrets Policy
+
+This repository is publicly shared and contains **zero secrets, API keys, or credentials**. All sensitive values are accessed via runtime environment variables and excluded through `.gitignore`. See [`.env.example`](.env.example) for required keys.
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.

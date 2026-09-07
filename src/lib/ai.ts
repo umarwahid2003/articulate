@@ -346,14 +346,18 @@ export function safeParseJson<T = any>(raw: string | undefined | null): T | null
       if (startObj !== -1 && endObj > startObj) {
         try {
           return JSON.parse(cleaned.substring(startObj, endObj + 1));
-        } catch {}
+        } catch (e) {
+          void e;
+        }
       }
       const startArr = cleaned.indexOf('[');
       const endArr = cleaned.lastIndexOf(']');
       if (startArr !== -1 && endArr > startArr) {
         try {
           return JSON.parse(cleaned.substring(startArr, endArr + 1));
-        } catch {}
+        } catch (e) {
+          void e;
+        }
       }
       return null;
     }
@@ -363,6 +367,7 @@ export function safeParseJson<T = any>(raw: string | undefined | null): T | null
 export function sanitizePromptText(text: string): string {
   if (!text) return '';
   return text
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\u007F]/g, '')
     .replace(/`/g, "'")
     .trim();
@@ -382,7 +387,7 @@ export function isMeaningfulSpeech(text: string | null | undefined): boolean {
 
   // 1. Remove bracketed audio tags (e.g., [music], [applause], [silence], (bell), etc.)
   const stripped = text
-    .replace(/[\[\({].*?[\]\)}]/g, ' ')
+    .replace(/(\[|\(|\{).*?(\]|\)|\})/g, ' ')
     .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'’“”…–—\\]/g, ' ')
     .toLowerCase()
     .replace(/\s+/g, ' ')
