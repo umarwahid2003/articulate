@@ -161,6 +161,7 @@
 
   .voice-recorder-prompt-card {
     max-width: 580px !important;
+    max-height: 170px !important;
     margin-bottom: 20px !important;
   }
 }

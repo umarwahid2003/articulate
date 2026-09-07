@@ -37,6 +37,9 @@ export const VoiceRecorder = ({
   const [audioLevels, setAudioLevels] = useState<number[]>([0.15, 0.2, 0.3, 0.2, 0.15]);
   
   const hasAudibleVoiceRef = useRef<boolean>(false);
+  const isRecordingActiveRef = useRef<boolean>(false);
+  const restartTimeoutRef = useRef<any>(null);
+  const startWebSpeechSessionRef = useRef<() => void>(() => {});
   
   const webRecognitionRef = useRef<any>(null);
   const transcriptionRef = useRef<string>('');
@@ -55,6 +58,11 @@ export const VoiceRecorder = ({
   // Full unmount cleanup to prevent microphone track or audio context leaks
   useEffect(() => {
     return () => {
+      isRecordingActiveRef.current = false;
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
+      }
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = null;
@@ -68,7 +76,12 @@ export const VoiceRecorder = ({
         mediaStreamRef.current = null;
       }
       if (webRecognitionRef.current) {
-        try { webRecognitionRef.current.stop(); } catch (e) { void e; }
+        try {
+          webRecognitionRef.current.onresult = null;
+          webRecognitionRef.current.onerror = null;
+          webRecognitionRef.current.onend = null;
+          webRecognitionRef.current.stop();
+        } catch (e) { void e; }
         webRecognitionRef.current = null;
       }
     };
@@ -77,7 +90,11 @@ export const VoiceRecorder = ({
   useEffect(() => {
     transcriptionRef.current = transcription;
     if (transcriptScrollRef.current) {
-      transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (transcriptScrollRef.current) {
+          transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+        }
+      });
     }
   }, [transcription]);
 
@@ -178,6 +195,11 @@ export const VoiceRecorder = ({
   };
 
   const stopRecording = useCallback(async () => {
+    isRecordingActiveRef.current = false;
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
     setIsRecording(false);
     stopAudioAnalysis();
     
@@ -186,6 +208,8 @@ export const VoiceRecorder = ({
       const rec = webRecognitionRef.current;
       webRecognitionRef.current = null;
       try {
+        rec.onresult = null;
+        rec.onerror = null;
         rec.onend = null;
         rec.stop();
       } catch (e) {
@@ -262,7 +286,112 @@ export const VoiceRecorder = ({
     }
   }, [onTranscriptionComplete]);
 
+  const startWebSpeechSession = useCallback(() => {
+    if (!isRecordingActiveRef.current) return;
+
+    const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionWeb) return;
+
+    try {
+      if (webRecognitionRef.current) {
+        try {
+          webRecognitionRef.current.onresult = null;
+          webRecognitionRef.current.onerror = null;
+          webRecognitionRef.current.onend = null;
+          webRecognitionRef.current.abort();
+        } catch (e) {
+          void e;
+        }
+        webRecognitionRef.current = null;
+      }
+
+      const recognition = new SpeechRecognitionWeb();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        if (!isRecordingActiveRef.current) return;
+        let sessionFinal = '';
+        let interim = '';
+
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            sessionFinal += result[0].transcript + ' ';
+          } else {
+            interim += result[0].transcript;
+          }
+        }
+
+        currentSessionFinalRef.current = sessionFinal.trim();
+
+        const committed = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+        const totalDisplay = interim.trim() 
+          ? (committed ? `${committed} ${interim.trim()}` : interim.trim())
+          : committed;
+
+        if (totalDisplay) {
+          setTranscription(totalDisplay);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          return;
+        }
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setError('Microphone permission blocked in browser.');
+          isRecordingActiveRef.current = false;
+        }
+      };
+
+      recognition.onend = () => {
+        if (!isRecordingActiveRef.current) return;
+
+        if (currentSessionFinalRef.current) {
+          accumulatedFinalRef.current = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
+          currentSessionFinalRef.current = '';
+        }
+
+        if (restartTimeoutRef.current) {
+          clearTimeout(restartTimeoutRef.current);
+        }
+
+        restartTimeoutRef.current = setTimeout(() => {
+          if (isRecordingActiveRef.current) {
+            startWebSpeechSessionRef.current();
+          }
+        }, 70);
+      };
+
+      recognition.start();
+      webRecognitionRef.current = recognition;
+    } catch (err) {
+      console.warn("SpeechRecognition start note:", err);
+      if (isRecordingActiveRef.current) {
+        if (restartTimeoutRef.current) {
+          clearTimeout(restartTimeoutRef.current);
+        }
+        restartTimeoutRef.current = setTimeout(() => {
+          if (isRecordingActiveRef.current) {
+            startWebSpeechSessionRef.current();
+          }
+        }, 150);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    startWebSpeechSessionRef.current = startWebSpeechSession;
+  }, [startWebSpeechSession]);
+
   const startRecording = async () => {
+    isRecordingActiveRef.current = true;
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
     setError(null);
     setTranscription('');
     transcriptionRef.current = '';
@@ -277,6 +406,10 @@ export const VoiceRecorder = ({
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          if (!isRecordingActiveRef.current) {
+            stream.getTracks().forEach(t => t.stop());
+            return;
+          }
           mediaStreamRef.current = stream;
           startAudioAnalysis(stream);
 
@@ -318,60 +451,7 @@ export const VoiceRecorder = ({
           popup: false,
         });
       } else {
-        const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        
-        if (SpeechRecognitionWeb) {
-          const recognition = new SpeechRecognitionWeb();
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.lang = 'en-US';
-
-          recognition.onresult = (event: any) => {
-            let sessionFinal = '';
-            let interim = '';
-
-            for (let i = 0; i < event.results.length; i++) {
-              const result = event.results[i];
-              if (result.isFinal) {
-                sessionFinal += result[0].transcript + ' ';
-              } else {
-                interim += result[0].transcript;
-              }
-            }
-
-            currentSessionFinalRef.current = sessionFinal.trim();
-
-            const committed = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
-            const totalDisplay = interim.trim() 
-              ? (committed ? `${committed} ${interim.trim()}` : interim.trim())
-              : committed;
-
-            setTranscription(totalDisplay);
-          };
-
-          recognition.onerror = (event: any) => {
-            if (event.error === 'not-allowed') {
-              setError('Microphone permission blocked in browser.');
-            }
-          };
-
-          recognition.onend = () => {
-            if (webRecognitionRef.current) {
-              if (currentSessionFinalRef.current) {
-                accumulatedFinalRef.current = mergeTranscripts(accumulatedFinalRef.current, currentSessionFinalRef.current);
-                currentSessionFinalRef.current = '';
-              }
-              try {
-                recognition.start();
-              } catch (e) {
-                void e;
-              }
-            }
-          };
-
-          recognition.start();
-          webRecognitionRef.current = recognition;
-        }
+        startWebSpeechSession();
       }
       
       setIsRecording(true);
@@ -611,7 +691,7 @@ export const VoiceRecorder = ({
           width: '100%', 
           maxWidth: '420px',
           minHeight: '80px',
-          maxHeight: '110px',
+          maxHeight: '140px',
           padding: '14px 16px', 
           borderRadius: '16px',
           backgroundColor: 'var(--surface-raised)',
