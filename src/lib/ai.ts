@@ -5,112 +5,245 @@ export interface Message {
   content: string;
 }
 
-const GROQ_CHAT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
-const GEMINI_CHAT_MODELS = ['gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-flash-latest'];
+const GROQ_CHAT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
+const GEMINI_CHAT_MODELS = ['gemini-3.6-flash', 'gemini-3-flash-preview'];
 
 const CONTEXT_FALLBACK_TOPICS: Record<string, TopicSuggestion[]> = {
-  interview: [
+  interview_career: [
     {
-      id: 'int-1',
+      id: 'fb-int-1',
       title: 'Handling Unexpected Pressure',
-      description: 'Describe a high-stakes moment at work where priorities shifted rapidly.',
+      description: 'Describe a high-stakes moment where priorities shifted rapidly and deadlines loomed.',
       category: 'Job Interviews',
-      starterPrompt: 'Tell me about a time when you had to manage unexpected workplace pressure or tight deadlines. How did you adapt your strategy?',
+      archetype: 'roleplay',
+      starterPrompt: 'Imagine your interviewer asks: "Can you tell me about a time when an unexpected crisis hit your team with tight deadlines? Walk me through how you prioritized your response and kept your composure."',
       emoji: '💼'
     },
     {
-      id: 'int-2',
-      title: 'Navigating Team Conflict',
-      description: 'Explain your approach to resolving disagreements with colleagues professionally.',
-      category: 'Job Interviews',
-      starterPrompt: 'Could you share an example of a disagreement with a team member or manager, and how you worked together toward a constructive resolution?',
+      id: 'fb-int-2',
+      title: 'Navigating Cross-Functional Conflict',
+      description: 'Explain your approach to resolving disagreements with strong-willed colleagues.',
+      category: 'Workplace Dilemma',
+      archetype: 'dilemma',
+      starterPrompt: 'A key stakeholder disagrees with your recommendation and is pushing back hard in front of leadership. How do you de-escalate the tension and steer the conversation toward constructive consensus?',
       emoji: '🤝'
     },
     {
-      id: 'int-3',
-      title: 'Architecting a Complex Solution',
-      description: 'Explain a technical or operational challenge you designed a solution for.',
-      category: 'Technical & Career',
-      starterPrompt: 'Walk me through a project or technical achievement where you took the lead from problem definition to execution.',
-      emoji: '🚀'
+      id: 'fb-int-3',
+      title: 'Explaining a Major Failure',
+      description: 'Reflect on a professional mistake, the lessons learned, and the rebound.',
+      category: 'Career Storytelling',
+      archetype: 'storytelling',
+      starterPrompt: 'Describe a project or decision you owned that did not go according to plan. What went wrong, what was your immediate reaction, and how did that experience reshape the way you work today?',
+      emoji: '🌱'
     },
     {
-      id: 'int-4',
-      title: 'Your 5-Year Impact Vision',
-      description: 'Articulate your trajectory, ambition, and industry perspective.',
-      category: 'Career Vision',
-      starterPrompt: 'Where do you see your industry evolving over the next few years, and what role do you plan to play in shaping it?',
+      id: 'fb-int-4',
+      title: 'Your 5-Year Industry Vision',
+      description: 'Articulate your trajectory, ambition, and industry perspective with conviction.',
+      category: 'Executive Presence',
+      archetype: 'prediction',
+      starterPrompt: 'Where do you see your field evolving over the next five years, and what distinct value or leadership role do you intend to bring to that future?',
       emoji: '🎯'
+    },
+    {
+      id: 'fb-int-5',
+      title: 'Salary & Value Negotiation',
+      description: 'Make a compelling case for a promotion or compensation adjustment.',
+      category: 'Professional Simulation',
+      archetype: 'roleplay',
+      starterPrompt: 'Roleplay a conversation with your manager: articulate why your contributions over the past year warrant a promotion and higher compensation, backing it up with measurable impact.',
+      emoji: '📊'
     }
   ],
-  tech: [
+  tech_engineering: [
     {
-      id: 'tech-1',
-      title: 'Generative AI in Daily Workflows',
-      description: 'Analyze the balance between AI automation and human creativity.',
-      category: 'Tech & AI',
-      starterPrompt: 'How has generative AI changed the way you solve problems or learn new skills in your daily life?',
+      id: 'fb-tech-1',
+      title: 'Autonomous Agents in Knowledge Work',
+      description: 'Debate how autonomous AI agents will reshape human software teams.',
+      category: 'Tech Debate',
+      archetype: 'debate',
+      starterPrompt: 'If autonomous AI agents can independently write, test, and deploy 60% of routine code within three years, how should software engineers redefine their unique value proposition?',
       emoji: '🤖'
     },
     {
-      id: 'tech-2',
-      title: 'The Future of Autonomous Agents',
-      description: 'Debate how autonomous agents will interact with human teams.',
-      category: 'Tech & AI',
-      starterPrompt: 'If autonomous software agents could handle 50% of routine knowledge work, what new skills should professionals focus on developing?',
+      id: 'fb-tech-2',
+      title: 'Technical Debt vs Ship Velocity',
+      description: 'Navigate the trade-off between architectural cleanliness and product speed.',
+      category: 'Engineering Dilemma',
+      archetype: 'dilemma',
+      starterPrompt: 'Your startup needs to launch a feature in two weeks to secure a vital contract, but cutting corners will introduce severe technical debt. Do you take the shortcut or push back? How do you justify your stance?',
       emoji: '⚡'
     },
     {
-      id: 'tech-3',
-      title: 'Privacy in an Hyper-Connected Era',
-      description: 'Discuss data ethics, privacy trade-offs, and emerging tech standards.',
+      id: 'fb-tech-3',
+      title: 'Data Privacy vs Hyper-Personalization',
+      description: 'Analyze whether modern digital consumers have permanently conceded their privacy.',
       category: 'Tech & Society',
-      starterPrompt: 'What do you think is the biggest ethical challenge facing the tech industry today, and how should we address it?',
+      archetype: 'debate',
+      starterPrompt: 'Consumers demand hyper-personalized AI experiences, but these require invasive data harvesting. Is true privacy still achievable in modern software, or is it an outdated illusion?',
       emoji: '🔒'
+    },
+    {
+      id: 'fb-tech-4',
+      title: 'Explaining Architecture to Non-Techies',
+      description: 'Translate complex technical architecture into plain business language.',
+      category: 'Communication Simulation',
+      archetype: 'roleplay',
+      starterPrompt: 'Explain how cloud microservices and event-driven architecture work to an investor with zero technical background, using a simple real-world analogy.',
+      emoji: '🧩'
+    },
+    {
+      id: 'fb-tech-5',
+      title: 'The Next Computing Paradigm',
+      description: 'Predict which emerging technology will replace the smartphone.',
+      category: 'Visionary Prediction',
+      archetype: 'prediction',
+      starterPrompt: 'Will spatial computing, brain-computer interfaces, or ambient voice wearables replace the smartphone as our primary computing device? Make your case.',
+      emoji: '🚀'
     }
   ],
-  startups: [
+  business_startups: [
     {
-      id: 'startup-1',
-      title: 'Finding Product-Market Fit',
-      description: 'Discuss the crucial indicators that a product truly solves a market need.',
-      category: 'Startups & Business',
-      starterPrompt: 'In your view, what is the most common mistake early-stage startups make when trying to find product-market fit?',
+      id: 'fb-biz-1',
+      title: 'The Unforgiving Search for PMF',
+      description: 'Discuss the true signals that prove a company has achieved product-market fit.',
+      category: 'Startup Strategy',
+      archetype: 'dilemma',
+      starterPrompt: 'Many founders confuse early traction with true product-market fit. What is the single most reliable indicator that customers genuinely cannot live without your product?',
       emoji: '📈'
     },
     {
-      id: 'startup-2',
-      title: 'Disrupting Traditional Markets',
-      description: 'Examine a legacy industry that is ripe for disruption.',
-      category: 'Business Strategy',
-      starterPrompt: 'If you had the resources to build any startup tomorrow, which industry would you disrupt first and why?',
+      id: 'fb-biz-2',
+      title: 'Bootstrapping vs Venture Capital',
+      description: 'Defend whether entrepreneurs should bootstrap or raise venture capital.',
+      category: 'Business Debate',
+      archetype: 'debate',
+      starterPrompt: 'Take a clear stance: is it better to maintain 100% equity ownership through cautious bootstrapping, or raise millions in VC to capture the market before competitors wake up?',
       emoji: '💡'
+    },
+    {
+      id: 'fb-biz-3',
+      title: 'Disrupting a Stagnant Legacy Market',
+      description: 'Pitch a modern solution that upends an entrenched traditional industry.',
+      category: 'Elevator Pitch',
+      archetype: 'prediction',
+      starterPrompt: 'If you had unlimited capital to disrupt one legacy industry today—like healthcare, real estate, or banking—which would you attack first, and what would your unfair advantage be?',
+      emoji: '🏢'
+    },
+    {
+      id: 'fb-biz-4',
+      title: 'Delivering Tough News to Investors',
+      description: 'Roleplay communicating missed targets transparently while keeping confidence high.',
+      category: 'Leadership Roleplay',
+      archetype: 'roleplay',
+      starterPrompt: 'Your startup missed its quarterly revenue target by 35%. Deliver an opening 90-second address to your board of directors that acknowledges the shortfall and outlines your recovery plan.',
+      emoji: '🎙️'
     }
   ],
-  casual: [
+  science_healthcare: [
     {
-      id: 'cas-1',
-      title: 'A Perspective-Shifting Habit',
-      description: 'Reflect on a daily ritual that significantly improves your focus or mindset.',
-      category: 'Daily Life',
-      starterPrompt: 'What is one micro-habit or routine you adopted that has had a surprisingly large positive impact on your life?',
+      id: 'fb-sci-1',
+      title: 'AI in Clinical Diagnosis',
+      description: 'Weigh the promises and ethical risks of AI diagnostic systems in medicine.',
+      category: 'Bioethics Dilemma',
+      archetype: 'dilemma',
+      starterPrompt: 'If an AI model demonstrates 98% accuracy in diagnosing rare conditions compared to an 85% human physician benchmark, should hospitals allow AI to make final diagnostic decisions without human sign-off?',
+      emoji: '🧬'
+    },
+    {
+      id: 'fb-sci-2',
+      title: 'Communicating Scientific Urgency',
+      description: 'Practice translating scientific consensus to a skeptical public.',
+      category: 'Public Speaking',
+      archetype: 'roleplay',
+      starterPrompt: 'How do you communicate urgent scientific findings—like antibiotic resistance or climate impact—without resorting to sensationalism that makes audiences defensive?',
+      emoji: '🔬'
+    },
+    {
+      id: 'fb-sci-3',
+      title: 'Gene Editing & Human Enhancement',
+      description: 'Debate where humanity should draw the ethical line on CRISPR genetic editing.',
+      category: 'Ethics Debate',
+      archetype: 'debate',
+      starterPrompt: 'Should CRISPR gene editing be restricted solely to curing fatal hereditary diseases, or should societies eventually permit genetic enhancements for memory, longevity, and physical stamina?',
+      emoji: '🧪'
+    }
+  ],
+  debates_persuasion: [
+    {
+      id: 'fb-deb-1',
+      title: 'The Future of Remote Work',
+      description: 'Argue whether remote work enhances innovation or gradually erodes company culture.',
+      category: 'Cultural Debate',
+      archetype: 'debate',
+      starterPrompt: 'Does complete remote work accelerate individual productivity, or does it erode serendipitous creativity and mentorship? Take a definitive side and defend it with compelling examples.',
+      emoji: '⚖️'
+    },
+    {
+      id: 'fb-deb-2',
+      title: 'Is College Still Worth It?',
+      description: 'Examine whether traditional higher education justifies its massive price tag.',
+      category: 'Education Debate',
+      archetype: 'debate',
+      starterPrompt: 'With self-directed online learning, AI tutors, and portfolio-based hiring, is a 4-year college degree still an indispensable launchpad, or is it becoming an overpriced credential?',
+      emoji: '🎓'
+    },
+    {
+      id: 'fb-deb-3',
+      title: 'The Attention Economy & Deep Focus',
+      description: 'Discuss whether short-form media has permanently altered human cognition.',
+      category: 'Psychology & Focus',
+      archetype: 'dilemma',
+      starterPrompt: 'Has algorithmic short-form video permanently degraded our capacity for deep, sustained contemplation, or are human minds simply adapting to higher bandwidth information processing?',
+      emoji: '📱'
+    },
+    {
+      id: 'fb-deb-4',
+      title: 'Speed vs Perfection in Decision-Making',
+      description: 'Defend whether fast flawed decisions beat slow perfect decisions in leadership.',
+      category: 'Philosophy of Leadership',
+      archetype: 'debate',
+      starterPrompt: 'Jeff Bezos argues that most decisions should be made with 70% of the information you wish you had. In your view, when is bias for action a virtue, and when does it become reckless?',
+      emoji: '⏱️'
+    }
+  ],
+  storytelling_reflection: [
+    {
+      id: 'fb-sto-1',
+      title: 'A Perspective-Altering Habit',
+      description: 'Reflect on a small routine that completely transformed your focus or mindset.',
+      category: 'Personal Narrative',
+      archetype: 'storytelling',
+      starterPrompt: 'What is one micro-habit or daily ritual you adopted that yielded a surprisingly outsized positive transformation in your life? Walk me through what changed.',
       emoji: '☕'
     },
     {
-      id: 'cas-2',
-      title: 'A Story Behind a Favorite Book/Movie',
-      description: 'Share a narrative that changed the way you think about people or society.',
-      category: 'Culture & Stories',
-      starterPrompt: 'What is a book, film, or piece of art that genuinely altered your perspective on something important?',
+      id: 'fb-sto-2',
+      title: 'The Art Piece That Shook You',
+      description: 'Share a narrative about a book, film, or artwork that shifted your worldview.',
+      category: 'Cultural Reflection',
+      archetype: 'storytelling',
+      starterPrompt: 'Describe a book, film, speech, or piece of art that fundamentally altered how you think about human nature or society. What was the central insight that stayed with you?',
       emoji: '🎬'
     },
     {
-      id: 'cas-3',
-      title: 'Travel Moments of Wonder',
-      description: 'Describe an encounter or landscape that took your breath away.',
-      category: 'Travel & Culture',
-      starterPrompt: 'Can you describe a place you visited or an encounter while traveling that completely surprised your expectations?',
+      id: 'fb-sto-3',
+      title: 'An Encounter with Serendipity',
+      description: 'Describe an unexpected encounter or journey that defied your expectations.',
+      category: 'Travel & Wonder',
+      archetype: 'storytelling',
+      starterPrompt: 'Share a story about an unexpected conversation with a stranger or an unforeseen detour while traveling that completely flipped your assumptions about a place or culture.',
       emoji: '🌍'
+    },
+    {
+      id: 'fb-sto-4',
+      title: 'Overcoming Spoken Hesitation',
+      description: 'Reflect on a moment where you hesitated to speak up and what it taught you.',
+      category: 'Vulnerability & Growth',
+      archetype: 'storytelling',
+      starterPrompt: 'Think back to a moment in school, work, or your personal life where you had an important thought but hesitated to speak up. How did that feel, and what did it teach you about your voice?',
+      emoji: '🎙️'
     }
   ]
 };
@@ -118,22 +251,59 @@ const CONTEXT_FALLBACK_TOPICS: Record<string, TopicSuggestion[]> = {
 function getFallbackTopicList(userContext?: UserContext | null): TopicSuggestion[] {
   const ctx = userContext || getUserContext();
   const goalLower = (ctx?.goal || '').toLowerCase();
+  const professionLower = (ctx?.profession || '').toLowerCase();
   const interests = (ctx?.interests || []).map(i => i.toLowerCase());
+  const formatLower = (ctx?.preferredFormat || '').toLowerCase();
 
   const pool: TopicSuggestion[] = [];
-  if (goalLower.includes('interview') || goalLower.includes('career')) {
-    pool.push(...CONTEXT_FALLBACK_TOPICS.interview);
+
+  // Match profession first
+  if (professionLower.includes('tech') || professionLower.includes('software') || professionLower.includes('engineer')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.tech_engineering);
+  } else if (professionLower.includes('business') || professionLower.includes('finance') || professionLower.includes('consulting')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.business_startups);
+  } else if (professionLower.includes('science') || professionLower.includes('health') || professionLower.includes('medicine')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.science_healthcare);
   }
+
+  // Match goal
+  if (goalLower.includes('interview') || goalLower.includes('career') || goalLower.includes('meeting')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.interview_career);
+  }
+
+  // Match interests
   if (interests.some(i => i.includes('tech') || i.includes('ai'))) {
-    pool.push(...CONTEXT_FALLBACK_TOPICS.tech);
+    pool.push(...CONTEXT_FALLBACK_TOPICS.tech_engineering);
   }
   if (interests.some(i => i.includes('startup') || i.includes('business'))) {
-    pool.push(...CONTEXT_FALLBACK_TOPICS.startups);
+    pool.push(...CONTEXT_FALLBACK_TOPICS.business_startups);
   }
-  pool.push(...CONTEXT_FALLBACK_TOPICS.casual);
+  if (interests.some(i => i.includes('science'))) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.science_healthcare);
+  }
 
-  // Shuffle the pool
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  // Match format preferences
+  if (formatLower.includes('debate') || formatLower.includes('controvers')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.debates_persuasion);
+  }
+  if (formatLower.includes('story') || formatLower.includes('reflect')) {
+    pool.push(...CONTEXT_FALLBACK_TOPICS.storytelling_reflection);
+  }
+
+  // Always include baseline debate and storytelling for well-rounded variety
+  pool.push(...CONTEXT_FALLBACK_TOPICS.debates_persuasion);
+  pool.push(...CONTEXT_FALLBACK_TOPICS.storytelling_reflection);
+
+  // De-duplicate by id
+  const seenIds = new Set<string>();
+  const uniquePool = pool.filter(item => {
+    if (seenIds.has(item.id)) return false;
+    seenIds.add(item.id);
+    return true;
+  });
+
+  // Ensure diverse archetypes are represented in the returned 5
+  const shuffled = [...uniquePool].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 5);
 }
 
@@ -371,25 +541,39 @@ export async function generatePersonalizedTopics(
   const goal = ctx?.goal || 'Job Interviews & Career';
   const level = ctx?.level || 'Intermediate';
   const interests = (ctx?.interests && ctx.interests.length > 0) ? ctx.interests.join(', ') : 'Technology, Business & Startups, Daily Life';
-  const tone = ctx?.speakingTone || 'Professional & Articulate';
+  const profession = ctx?.profession || 'General Professional / Student';
+  const challenge = ctx?.challenge || 'Thinking on your feet and structuring thoughts clearly without hesitation';
+  const preferredFormat = ctx?.preferredFormat || 'Realistic simulations, spicy debates, and decision dilemmas';
+  const tone = ctx?.speakingTone || 'Executive, articulate, and compelling';
+  const customInterests = ctx?.customInterests ? `Custom Focus: "${ctx.customInterests}"` : '';
 
   const excludeClause = excludeTitles.length > 0
-    ? `IMPORTANT: Do NOT generate any of these already seen topics: ${JSON.stringify(excludeTitles)}.`
+    ? `IMPORTANT: Do NOT repeat any of these already seen topic titles: ${JSON.stringify(excludeTitles)}.`
     : '';
 
-  const prompt = `You are Articulate, an elite, creative English speaking coach.
-Generate 5 completely fresh, highly stimulating, and diverse speaking topics specifically customized for this student:
-- Main Speaking Goal: "${goal}"
-- English Proficiency Level: "${level}"
-- Passions & Interests: "${interests}"
-- Desired Speaking Style: "${tone}"
+  const prompt = `You are Articulate, an elite AI speech and communication mentor.
+Generate 5 completely fresh, intellectually stimulating, and varied speaking topics specifically customized for this student:
+- Student Profession / Major: "${profession}"
+- Primary Speaking Goal: "${goal}"
+- Current English Proficiency Level: "${level}"
+- Passions & Topic Interests: "${interests}"
+- Biggest Speaking Hurdle: "${challenge}"
+- Desired Speaking Vibe / Tone: "${tone}"
+- Preferred Discussion Dynamic: "${preferredFormat}"
+${customInterests ? `- ${customInterests}` : ''}
 - Randomization seed: ${Date.now()}-${Math.floor(Math.random() * 10000)}
 ${excludeClause}
 
-GUIDELINES FOR INTRIGUING TOPICS:
-1. Make them provocative, conversational, and directly applicable to their goal ("${goal}").
-2. Include varied formats: an interview behavioral scenario, a future trend prediction, a critical decision dilemma, a startup pitch simulation, and a philosophical reflection.
-3. The "starterPrompt" MUST sound like a warm, supportive human coach asking an insightful question that invites an extended, fluent response.
+MANDATORY TOPIC DIVERSITY REQUIREMENT:
+The 5 topics MUST represent 5 DISTINCT ARCHETYPES so the student practices varied communication modes:
+1. "roleplay" (Workplace / Academic Simulation): A realistic, high-stakes conversational simulation directly grounded in their field ("${profession}") or goal ("${goal}").
+2. "dilemma" (High-Stakes Decision Dilemma): A difficult ethical, technical, or strategic tradeoff with no clear right answer, forcing the student to weigh options.
+3. "debate" (Thought-Provoking Debate / Hot Take): A controversial viewpoint or counter-intuitive trend in their interest area that requires defending a reasoned stance.
+4. "storytelling" (Personal Narrative & Reflection): An invitation to articulate a formative failure, unexpected triumph, pivotal life lesson, or personal transformation.
+5. "prediction" (Visionary Prediction / Pitch): Articulating what the future holds or pitching a bold vision with structured persuasiveness.
+
+STARTER PROMPT MANDATE:
+The "starterPrompt" MUST sound like a warm, supportive human mentor setting up the scene. It should set up the context in 1-2 vivid sentences and then ask an open-ended question that sparks a 1-2 minute spoken response.
 
 Return STRICTLY a JSON object matching this schema:
 {
@@ -397,10 +581,11 @@ Return STRICTLY a JSON object matching this schema:
     {
       "id": "topic-unique-${Date.now()}-1",
       "title": "Concise Engaging Title (max 5 words)",
-      "description": "1 engaging sentence describing the focus of the speaking topic",
-      "category": "Category tag matching their interest or goal",
-      "starterPrompt": "A warm, natural question from the AI mentor to begin speaking",
-      "emoji": "Relevant icon emoji"
+      "description": "1 engaging sentence describing the premise",
+      "category": "Category tag matching their field or goal",
+      "archetype": "roleplay | dilemma | debate | storytelling | prediction",
+      "starterPrompt": "Warm, natural question from the mentor setting up the topic",
+      "emoji": "Relevant emoji icon"
     }
   ]
 }`;
@@ -419,7 +604,8 @@ Return STRICTLY a JSON object matching this schema:
             model,
             messages: [{ role: 'user', content: prompt }],
             response_format: { type: 'json_object' },
-            temperature: 0.95
+            temperature: 0.85,
+            max_tokens: 1200
           })
         });
 
@@ -433,6 +619,7 @@ Return STRICTLY a JSON object matching this schema:
               title: item.title || `Speaking Topic ${idx + 1}`,
               description: item.description || '',
               category: item.category || 'Speaking Practice',
+              archetype: item.archetype || (['roleplay', 'dilemma', 'debate', 'storytelling', 'prediction'][idx % 5]),
               starterPrompt: item.starterPrompt || item.prompt || 'Share your thoughts on this topic.',
               emoji: item.emoji || '🎙️'
             }));
@@ -453,7 +640,7 @@ Return STRICTLY a JSON object matching this schema:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.95 }
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.85 }
           })
         });
 
@@ -469,6 +656,7 @@ Return STRICTLY a JSON object matching this schema:
                 title: item.title || `Speaking Topic ${idx + 1}`,
                 description: item.description || '',
                 category: item.category || 'Speaking Practice',
+                archetype: item.archetype || (['roleplay', 'dilemma', 'debate', 'storytelling', 'prediction'][idx % 5]),
                 starterPrompt: item.starterPrompt || item.prompt || 'Share your thoughts on this topic.',
                 emoji: item.emoji || '🎙️'
               }));

@@ -225,15 +225,44 @@ export const Practice = () => {
                   padding: '6px 0'
                 }}
               >
-                {/* Category */}
-                {currentTopic.category && (
+                {/* Category & Archetype Badge */}
+                {(currentTopic.category || currentTopic.archetype) && (
                   <div style={{ 
-                    fontSize: '12px', 
-                    color: 'var(--ink-tertiary)',
-                    fontFamily: 'var(--font-body)',
-                    marginBottom: '4px'
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginBottom: '6px',
+                    flexWrap: 'wrap'
                   }}>
-                    {currentTopic.category}
+                    {currentTopic.category && (
+                      <span style={{ 
+                        fontSize: '12px', 
+                        color: 'var(--ink-tertiary)',
+                        fontFamily: 'var(--font-body)',
+                        textTransform: 'capitalize'
+                      }}>
+                        {currentTopic.category}
+                      </span>
+                    )}
+                    {currentTopic.category && currentTopic.archetype && (
+                      <span style={{ fontSize: '10px', color: 'var(--ink-tertiary)', opacity: 0.6 }}>•</span>
+                    )}
+                    {currentTopic.archetype && (
+                      <span style={{
+                        textTransform: 'capitalize',
+                        background: 'rgba(47, 75, 60, 0.08)',
+                        color: 'var(--moss-base, #2F4B3C)',
+                        padding: '1px 8px',
+                        borderRadius: '999px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        letterSpacing: '0.02em',
+                        border: '1px solid rgba(47, 75, 60, 0.16)'
+                      }}>
+                        {currentTopic.archetype}
+                      </span>
+                    )}
                   </div>
                 )}
 
@@ -245,11 +274,26 @@ export const Practice = () => {
                   color: 'var(--ink-base)', 
                   lineHeight: 1.35,
                   letterSpacing: '-0.01em',
-                  marginBottom: '8px'
+                  marginBottom: currentTopic.description ? '6px' : '8px'
                 }}>
                   {currentTopic.emoji && <span style={{ marginRight: '6px' }}>{currentTopic.emoji}</span>}
                   {currentTopic.title}
                 </div>
+
+                {/* Topic Description / Prompt */}
+                {currentTopic.description && (
+                  <div style={{
+                    fontSize: '13px',
+                    color: 'var(--ink-secondary)',
+                    fontFamily: 'var(--font-body)',
+                    lineHeight: 1.45,
+                    maxWidth: '460px',
+                    margin: '0 auto 10px',
+                    fontWeight: 400
+                  }}>
+                    {currentTopic.description}
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>

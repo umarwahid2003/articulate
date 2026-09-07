@@ -3,8 +3,12 @@ export interface UserContext {
   level: string;
   interests: string[];
   dailyGoalMinutes?: number;
+  profession?: string;
+  challenge?: string;
+  preferredFormat?: string;
+  customInterests?: string;
   feedbackStyle?: 'balanced' | 'strict' | 'gentle';
-  speakingTone?: 'professional' | 'casual' | 'persuasive' | string;
+  speakingTone?: 'executive' | 'charismatic' | 'intellectual' | 'casual' | string;
   completedAt?: string;
 }
 
@@ -15,6 +19,7 @@ export interface TopicSuggestion {
   description: string;
   starterPrompt: string;
   emoji: string;
+  archetype?: 'roleplay' | 'debate' | 'dilemma' | 'storytelling' | 'prediction' | string;
 }
 
 export interface AICorrection {

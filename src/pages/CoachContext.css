@@ -27,6 +27,50 @@
   gap: 10px;
 }
 
+.context-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.context-chip {
+  padding: 6px 12px;
+  border-radius: 100px;
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.context-chip:hover {
+  border-color: var(--grove-moss);
+  color: var(--grove-moss);
+  background-color: var(--grove-moss-tint);
+}
+
+.context-custom-input {
+  width: 100%;
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: var(--ink-base);
+  font-size: 14px;
+  font-family: var(--font-body);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.context-custom-input:focus {
+  border-color: var(--grove-moss);
+  box-shadow: 0 0 0 3px var(--grove-moss-tint);
+}
+
 /* Tablet & Desktop Optimizations (>= 768px) */
 @media (min-width: 768px) {
   .context-container {
