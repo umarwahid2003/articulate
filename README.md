@@ -1,7 +1,7 @@
 # Articulate
 
-> **The Deliberate Speech & Fluency Studio**  
-> An AI-powered spoken English coach designed to bridge the "articulacy chasm" through low-friction daily practice, real-time voice capture, multi-archetype scenario simulation, and deep linguistic feedback.
+> **The Spoken Fluency Studio for Non-Native English Speakers**  
+> An AI-powered speech coach designed to break the mental translation loop, conquer speaking anxiety, and build effortless English spoken fluency through low-friction daily practice, real-time voice capture, and native phrasing upgrades.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/umarwahid2003/articulate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)](https://www.typescriptlang.org/)
@@ -13,9 +13,9 @@
 
 ## Overview
 
-Over 1.5 billion people understand English, yet millions of talented engineers, researchers, and global professionals face a career ceiling: they read and write fluently, but when placed under spontaneous speaking pressure (job interviews, executive meetings, architectural debates), they freeze, ramble, or default to simplistic phrasing.
+Over 1.2 billion non-native English speakers understand English well, yet millions of talented engineers, researchers, and global professionals face a frustrating career ceiling: they read technical documents with ease and write clean emails, but when placed under spontaneous speaking pressure (job interviews, executive meetings, architectural debates), they freeze, get caught in the mental translation loop, or default to stiff, textbook-like phrasing.
 
-**Articulate** is built on the premise that speaking is a physical and cognitive reflex—not a multiple-choice drill. In just 3 to 5 minutes a day, users engage in private, unscripted spoken practice against tailored scenarios, receiving immediate objective scoring and surgical before-and-after sentence upgrades.
+**Articulate** is built specifically for non-native speakers on the premise that spoken fluency is a physical and cognitive reflex—not a multiple-choice vocabulary drill. In just 3 to 5 minutes a day, users engage in private, unscripted spoken practice against tailored scenarios, receiving immediate objective scoring and surgical before-and-after native sentence upgrades.
 
 ---
 
