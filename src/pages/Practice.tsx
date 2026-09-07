@@ -39,6 +39,11 @@ export interface SessionRecord {
   durationSeconds: number;
 }
 
+const stripEmojis = (str?: string) => {
+  if (!str) return '';
+  return str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s+/g, ' ').trim();
+};
+
 const TOPIC_LOADING_PHRASES = [
   "Curating your prompt...",
   "Aligning with speaking goals...",
@@ -369,72 +374,33 @@ export const Practice = () => {
               >
                 {/* Category & Archetype Badge */}
                 {(currentTopic.category || currentTopic.archetype) && (
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    marginBottom: '6px',
-                    flexWrap: 'wrap'
-                  }}>
+                  <div className="practice-topic-meta">
                     {currentTopic.category && (
-                      <span style={{ 
-                        fontSize: '12px', 
-                        color: 'var(--ink-tertiary)',
-                        fontFamily: 'var(--font-body)',
-                        textTransform: 'capitalize'
-                      }}>
-                        {currentTopic.category}
+                      <span className="practice-topic-category">
+                        {stripEmojis(currentTopic.category)}
                       </span>
                     )}
                     {currentTopic.category && currentTopic.archetype && (
-                      <span style={{ fontSize: '10px', color: 'var(--ink-tertiary)', opacity: 0.6 }}>•</span>
+                      <span className="practice-topic-sep">•</span>
                     )}
                     {currentTopic.archetype && (
-                      <span style={{
-                        textTransform: 'capitalize',
-                        background: 'rgba(47, 75, 60, 0.08)',
-                        color: 'var(--moss-base, #2F4B3C)',
-                        padding: '1px 8px',
-                        borderRadius: '999px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.02em',
-                        border: '1px solid rgba(47, 75, 60, 0.16)'
-                      }}>
-                        {currentTopic.archetype}
+                      <span className="practice-archetype-pill">
+                        {stripEmojis(currentTopic.archetype)}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Topic Title */}
-                <div style={{ 
-                  fontSize: '17px', 
-                  fontWeight: 600, 
-                  fontFamily: 'var(--font-display)', 
-                  color: 'var(--ink-base)', 
-                  lineHeight: 1.35,
-                  letterSpacing: '-0.01em',
-                  marginBottom: currentTopic.description ? '6px' : '8px'
-                }}>
-                  {currentTopic.emoji && <span style={{ marginRight: '6px' }}>{currentTopic.emoji}</span>}
-                  {currentTopic.title}
-                </div>
+                {/* Topic Title (Editorial Georgia Serif, Zero Emojis) */}
+                <h2 className="practice-topic-title">
+                  {stripEmojis(currentTopic.title)}
+                </h2>
 
                 {/* Topic Description / Prompt */}
                 {currentTopic.description && (
-                  <div style={{
-                    fontSize: '13px',
-                    color: 'var(--ink-secondary)',
-                    fontFamily: 'var(--font-body)',
-                    lineHeight: 1.45,
-                    maxWidth: '460px',
-                    margin: '0 auto 10px',
-                    fontWeight: 400
-                  }}>
-                    {currentTopic.description}
-                  </div>
+                  <p className="practice-topic-desc">
+                    {stripEmojis(currentTopic.description)}
+                  </p>
                 )}
 
                 {/* Actions */}

@@ -20,6 +20,76 @@
   padding-top: 4px;
 }
 
+.practice-topic-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.practice-topic-category {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  text-transform: capitalize;
+}
+
+.practice-topic-sep {
+  font-size: 11px;
+  color: var(--ink-tertiary);
+  opacity: 0.6;
+}
+
+.practice-archetype-pill {
+  display: inline-flex;
+  align-items: center;
+  text-transform: uppercase;
+  background-color: rgba(47, 75, 60, 0.08);
+  color: var(--grove-moss);
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(47, 75, 60, 0.2);
+  line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .practice-archetype-pill {
+    background-color: rgba(82, 168, 131, 0.16);
+    color: #8CE0B8;
+    border-color: rgba(82, 168, 131, 0.35);
+  }
+}
+
+.practice-topic-title {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink-base);
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  text-wrap: balance;
+  text-align: center;
+}
+
+.practice-topic-desc {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-secondary);
+  line-height: 1.52;
+  max-width: 480px;
+  margin: 0 auto 12px;
+  font-weight: 400;
+  text-align: center;
+}
+
 .practice-eval-drawer {
   position: fixed;
   bottom: 0;
@@ -60,6 +130,15 @@
     max-width: 600px;
     min-height: 104px;
     padding-top: 12px;
+  }
+
+  .practice-topic-title {
+    font-size: 26px;
+  }
+
+  .practice-topic-desc {
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   .practice-drag-handle {

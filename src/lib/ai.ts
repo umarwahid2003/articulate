@@ -8,6 +8,11 @@ export interface Message {
 const GROQ_CHAT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
 const GEMINI_CHAT_MODELS = ['gemini-3.6-flash', 'gemini-3-flash-preview'];
 
+export function cleanNoEmoji(str?: string): string {
+  if (!str) return '';
+  return str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s+/g, ' ').trim();
+}
+
 const CONTEXT_FALLBACK_TOPICS: Record<string, TopicSuggestion[]> = {
   interview_career: [
     {
@@ -304,7 +309,14 @@ function getFallbackTopicList(userContext?: UserContext | null): TopicSuggestion
 
   // Ensure diverse archetypes are represented in the returned 5
   const shuffled = [...uniquePool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 5);
+  return shuffled.slice(0, 5).map(t => ({
+    id: t.id,
+    title: cleanNoEmoji(t.title),
+    description: cleanNoEmoji(t.description),
+    category: cleanNoEmoji(t.category),
+    archetype: t.archetype,
+    starterPrompt: cleanNoEmoji(t.starterPrompt)
+  }));
 }
 
 export function getUserContext(): UserContext | null {
@@ -575,17 +587,19 @@ The 5 topics MUST represent 5 DISTINCT ARCHETYPES so the student practices varie
 STARTER PROMPT MANDATE:
 The "starterPrompt" MUST sound like a warm, supportive human mentor setting up the scene. It should set up the context in 1-2 vivid sentences and then ask an open-ended question that sparks a 1-2 minute spoken response.
 
+CRITICAL FORMATTING RULE:
+Do NOT include any emojis, pictograms, or decorative symbols anywhere in the title, description, category, or prompt. Keep all text purely typographic, intellectual, and clean.
+
 Return STRICTLY a JSON object matching this schema:
 {
   "topics": [
     {
       "id": "topic-unique-${Date.now()}-1",
-      "title": "Concise Engaging Title (max 5 words)",
+      "title": "Concise Engaging Title (max 5 words, NO emojis)",
       "description": "1 engaging sentence describing the premise",
       "category": "Category tag matching their field or goal",
       "archetype": "roleplay | dilemma | debate | storytelling | prediction",
-      "starterPrompt": "Warm, natural question from the mentor setting up the topic",
-      "emoji": "Relevant emoji icon"
+      "starterPrompt": "Warm, natural question from the mentor setting up the topic"
     }
   ]
 }`;
@@ -616,12 +630,11 @@ Return STRICTLY a JSON object matching this schema:
           if (Array.isArray(list) && list.length > 0) {
             return list.map((item, idx) => ({
               id: item.id || `gen-${Date.now()}-${idx}`,
-              title: item.title || `Speaking Topic ${idx + 1}`,
-              description: item.description || '',
-              category: item.category || 'Speaking Practice',
-              archetype: item.archetype || (['roleplay', 'dilemma', 'debate', 'storytelling', 'prediction'][idx % 5]),
-              starterPrompt: item.starterPrompt || item.prompt || 'Share your thoughts on this topic.',
-              emoji: item.emoji || '🎙️'
+              title: cleanNoEmoji(item.title) || `Speaking Topic ${idx + 1}`,
+              description: cleanNoEmoji(item.description) || '',
+              category: cleanNoEmoji(item.category) || 'Speaking Practice',
+              archetype: cleanNoEmoji(item.archetype) || (['roleplay', 'dilemma', 'debate', 'storytelling', 'prediction'][idx % 5]),
+              starterPrompt: cleanNoEmoji(item.starterPrompt || item.prompt) || 'Share your thoughts on this topic.'
             }));
           }
         }
@@ -653,12 +666,11 @@ Return STRICTLY a JSON object matching this schema:
             if (Array.isArray(list) && list.length > 0) {
               return list.map((item, idx) => ({
                 id: item.id || `gem-${Date.now()}-${idx}`,
-                title: item.title || `Speaking Topic ${idx + 1}`,
-                description: item.description || '',
-                category: item.category || 'Speaking Practice',
-                archetype: item.archetype || (['roleplay', 'dilemma', 'debate', 'storytelling', 'prediction'][idx % 5]),
-                starterPrompt: item.starterPrompt || item.prompt || 'Share your thoughts on this topic.',
-                emoji: item.emoji || '🎙️'
+                title: cleanNoEmoji(item.title) || `Speaking Topic ${idx + 1}`,
+                description: cleanNoEmoji(item.description) || '',
+                category: cleanNoEmoji(item.category) || 'Speaking Practice',
+                archetype: cleanNoEmoji(item.archetype) || (['roleplay', 'dilemma', 'debate', 'storytelling', 'prediction'][idx % 5]),
+                starterPrompt: cleanNoEmoji(item.starterPrompt || item.prompt) || 'Share your thoughts on this topic.'
               }));
             }
           }

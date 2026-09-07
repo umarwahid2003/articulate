@@ -18,7 +18,7 @@ export interface TopicSuggestion {
   category: string;
   description: string;
   starterPrompt: string;
-  emoji: string;
+  emoji?: string;
   archetype?: 'roleplay' | 'debate' | 'dilemma' | 'storytelling' | 'prediction' | string;
 }
 
